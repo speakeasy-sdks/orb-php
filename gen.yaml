@@ -7,4 +7,4 @@ generation:
 php:
   version: ""
   namespace: Orb\Orb
-  packageName: orb/orb-api
+  packageName: Orb/Orb
