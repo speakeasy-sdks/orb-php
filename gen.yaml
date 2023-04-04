@@ -6,5 +6,5 @@ generation:
   singleTagPerOp: false
 php:
   version: ""
-  namespace: Orb\Orb
-  packageName: Orb/Orb
+  namespace: orb\orb
+  packageName: orb/orb-api
