@@ -30,16 +30,16 @@ try {
     $request->currency = 'delectus';
     $request->email = 'Geraldine_Kreiger52@gmail.com';
     $request->externalCustomerId = 'iusto';
-    $request->name = 'excepturi';
-    $request->paymentProvider = PostCustomersRequestBodyPaymentProviderEnum::BILL_COM;
-    $request->paymentProviderId = 'recusandae';
+    $request->name = 'Charlie Walsh II';
+    $request->paymentProvider = PostCustomersRequestBodyPaymentProviderEnum::QUICKBOOKS;
+    $request->paymentProviderId = 'deserunt';
     $request->shippingAddress = new PostCustomersRequestBodyShippingAddress();
-    $request->shippingAddress->city = 'Belleville';
+    $request->shippingAddress->city = 'West Ritaworth';
     $request->shippingAddress->country = 'US';
-    $request->shippingAddress->line1 = 'quis';
-    $request->shippingAddress->line2 = 'veritatis';
-    $request->shippingAddress->postalCode = '03897-1889';
-    $request->shippingAddress->state = 'molestiae';
+    $request->shippingAddress->line1 = 'quo';
+    $request->shippingAddress->line2 = 'odit';
+    $request->shippingAddress->postalCode = '89478-4576';
+    $request->shippingAddress->state = 'dicta';
     $request->timezone = 'Etc/UTC';
 
     $response = $sdk->customer->create($request);
