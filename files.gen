@@ -274,4 +274,12 @@ src/Models/Shared/PlanPhase.php
 src/Models/Shared/SubscriptionStatusEnum.php
 src/Models/Shared/Subscription.php
 src/Models/Shared/Security.php
+docs/sdk/README.md
+docs/availability/README.md
+docs/credits/README.md
+docs/customer/README.md
+docs/event/README.md
+docs/invoice/README.md
+docs/plan/README.md
+docs/subscription/README.md
 USAGE.md

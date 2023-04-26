@@ -3,19 +3,16 @@
 <?php
 
 declare(strict_types=1);
+require_once 'vendor/autoload.php';
 
-use orb\orb\SDK;
+use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PostCustomersRequestBody;
 use \orb\orb\Models\Operations\PostCustomersRequestBodyBillingAddress;
 use \orb\orb\Models\Operations\PostCustomersRequestBodyPaymentProviderEnum;
 use \orb\orb\Models\Operations\PostCustomersRequestBodyShippingAddress;
 
-$security = new Security();
-$security->bearerAuth = 'Bearer YOUR_BEARER_TOKEN_HERE';
-
 $sdk = SDK::builder()
-    ->setSecurity($security);
     ->build();
 
 try {
