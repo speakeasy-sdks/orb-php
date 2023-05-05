@@ -21,5 +21,5 @@ enum PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProviderE
     case STRIPE_CHARGE = 'stripe_charge';
     case STRIPE_INVOICE = 'stripe_invoice';
     case BILL_COM = 'bill.com';
-    case NULL = 'null';
+    case LESS_THAN_NIL_GREATER_THAN = '<nil>';
 }

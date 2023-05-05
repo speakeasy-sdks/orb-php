@@ -46,7 +46,8 @@ class Availability
      * 
      * @return \orb\orb\Models\Operations\GetPingResponse
      */
-	public function ping(
+	
+    public function ping(
     ): \orb\orb\Models\Operations\GetPingResponse
     {
         $baseUrl = $this->_serverUrl;

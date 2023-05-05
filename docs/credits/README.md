@@ -6,11 +6,11 @@ Actions related to credit management.
 
 ### Available Operations
 
-* [create](#create) - Add credit ledger entry
+* [get](#get) - Add credit ledger entry
 * [getCredits](#getcredits) - Retrieve credit balance
 * [getCreditsLedger](#getcreditsledger) - View credits ledger
 
-## create
+## get
 
 This endpoint allows you to create a new ledger entry for a specified customer's balance. This can be used to increment balance, deduct credits, and change the expiry date of existing credits.
 
@@ -96,7 +96,7 @@ try {
     $request->requestBody->targetExpiryDate = DateTime::createFromFormat('Y-m-d', '2023-02-01');
     $request->customerId = 'hic';
 
-    $response = $sdk->credits->create($request);
+    $response = $sdk->credits->get($request);
 
     if ($response->creditLedgerEntry !== null) {
         // handle response

@@ -21,5 +21,5 @@ enum PutCustomersCustomerIdRequestBodyPaymentProviderEnum: string
     case QUICKBOOKS = 'quickbooks';
     case BILL_COM = 'bill.com';
     case STRIPE_CHARGE = 'stripe_charge';
-    case NULL = 'null';
+    case LESS_THAN_NIL_GREATER_THAN = '<nil>';
 }
