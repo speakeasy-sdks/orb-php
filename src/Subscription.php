@@ -60,8 +60,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelRequest $request
      * @return \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelResponse
      */
-	
-    public function cancel(
+	public function cancel(
         \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelRequest $request,
     ): \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelResponse
     {
@@ -116,8 +115,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequest $request
      * @return \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeResponse
      */
-	
-    public function changeSchedule(
+	public function changeSchedule(
         \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequest $request,
     ): \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeResponse
     {
@@ -497,8 +495,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\PostSubscriptionsRequestBody $request
      * @return \orb\orb\Models\Operations\PostSubscriptionsResponse
      */
-	
-    public function create(
+	public function create(
         \orb\orb\Models\Operations\PostSubscriptionsRequestBody $request,
     ): \orb\orb\Models\Operations\PostSubscriptionsResponse
     {
@@ -536,8 +533,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdRequest $request
      * @return \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdResponse
      */
-	
-    public function get(
+	public function get(
         \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdRequest $request,
     ): \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdResponse
     {
@@ -576,8 +572,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdCostRequest $request
      * @return \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdCostResponse
      */
-	
-    public function getCost(
+	public function getCost(
         \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdCostRequest $request,
     ): \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdCostResponse
     {
@@ -614,8 +609,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdScheduleRequest $request
      * @return \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdScheduleResponse
      */
-	
-    public function getSchedule(
+	public function getSchedule(
         \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdScheduleRequest $request,
     ): \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdScheduleResponse
     {
@@ -773,8 +767,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageRequest $request
      * @return \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageResponse
      */
-	
-    public function getUsage(
+	public function getUsage(
         \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageRequest $request,
     ): \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageResponse
     {
@@ -809,8 +802,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\ListSubscriptionsRequest $request
      * @return \orb\orb\Models\Operations\ListSubscriptionsResponse
      */
-	
-    public function list(
+	public function list(
         \orb\orb\Models\Operations\ListSubscriptionsRequest $request,
     ): \orb\orb\Models\Operations\ListSubscriptionsResponse
     {
@@ -847,8 +839,7 @@ class Subscription
      * @param \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdUnschedulePendingPlanChangesRequest $request
      * @return \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdUnschedulePendingPlanChangesResponse
      */
-	
-    public function unschedule(
+	public function unschedule(
         \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdUnschedulePendingPlanChangesRequest $request,
     ): \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdUnschedulePendingPlanChangesResponse
     {

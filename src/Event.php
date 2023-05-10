@@ -60,8 +60,7 @@ class Event
      * @param \orb\orb\Models\Operations\PutDeprecateEventsEventIdRequest $request
      * @return \orb\orb\Models\Operations\PutDeprecateEventsEventIdResponse
      */
-	
-    public function deprecate(
+	public function deprecate(
         \orb\orb\Models\Operations\PutDeprecateEventsEventIdRequest $request,
     ): \orb\orb\Models\Operations\PutDeprecateEventsEventIdResponse
     {
@@ -239,8 +238,7 @@ class Event
      * @param \orb\orb\Models\Operations\PostIngestRequest $request
      * @return \orb\orb\Models\Operations\PostIngestResponse
      */
-	
-    public function ingest(
+	public function ingest(
         \orb\orb\Models\Operations\PostIngestRequest $request,
     ): \orb\orb\Models\Operations\PostIngestResponse
     {
@@ -295,8 +293,7 @@ class Event
      * @param \orb\orb\Models\Operations\PostEventsSearchRequestBody $request
      * @return \orb\orb\Models\Operations\PostEventsSearchResponse
      */
-	
-    public function search(
+	public function search(
         \orb\orb\Models\Operations\PostEventsSearchRequestBody $request,
     ): \orb\orb\Models\Operations\PostEventsSearchResponse
     {
@@ -348,8 +345,7 @@ class Event
      * @param \orb\orb\Models\Operations\PutEventsEventIdRequest $request
      * @return \orb\orb\Models\Operations\PutEventsEventIdResponse
      */
-	
-    public function update(
+	public function update(
         \orb\orb\Models\Operations\PutEventsEventIdRequest $request,
     ): \orb\orb\Models\Operations\PutEventsEventIdResponse
     {

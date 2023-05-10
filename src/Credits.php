@@ -98,8 +98,7 @@ class Credits
      * @param \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequest $request
      * @return \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryResponse
      */
-	
-    public function get(
+	public function get(
         \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequest $request,
     ): \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryResponse
     {
@@ -141,8 +140,7 @@ class Credits
      * @param \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsRequest $request
      * @return \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsResponse
      */
-	
-    public function getCredits(
+	public function getCredits(
         \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsRequest $request,
     ): \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsResponse
     {
@@ -206,8 +204,7 @@ class Credits
      * @param \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerRequest $request
      * @return \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerResponse
      */
-	
-    public function getCreditsLedger(
+	public function getCreditsLedger(
         \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerRequest $request,
     ): \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerResponse
     {

@@ -51,8 +51,7 @@ class Plan
      * @param \orb\orb\Models\Operations\GetPlansPlanIdRequest $request
      * @return \orb\orb\Models\Operations\GetPlansPlanIdResponse
      */
-	
-    public function get(
+	public function get(
         \orb\orb\Models\Operations\GetPlansPlanIdRequest $request,
     ): \orb\orb\Models\Operations\GetPlansPlanIdResponse
     {
@@ -91,8 +90,7 @@ class Plan
      * @param \orb\orb\Models\Operations\GetPlansExternalPlanIdRequest $request
      * @return \orb\orb\Models\Operations\GetPlansExternalPlanIdResponse
      */
-	
-    public function getByExternalId(
+	public function getByExternalId(
         \orb\orb\Models\Operations\GetPlansExternalPlanIdRequest $request,
     ): \orb\orb\Models\Operations\GetPlansExternalPlanIdResponse
     {
@@ -129,8 +127,7 @@ class Plan
      * @param \orb\orb\Models\Operations\ListPlansRequestBody $request
      * @return \orb\orb\Models\Operations\ListPlansResponse
      */
-	
-    public function list(
+	public function list(
         \orb\orb\Models\Operations\ListPlansRequestBody $request,
     ): \orb\orb\Models\Operations\ListPlansResponse
     {

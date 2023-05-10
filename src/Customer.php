@@ -50,8 +50,7 @@ class Customer
      * @param \orb\orb\Models\Operations\PostCustomersRequestBody $request
      * @return \orb\orb\Models\Operations\PostCustomersResponse
      */
-	
-    public function create(
+	public function create(
         \orb\orb\Models\Operations\PostCustomersRequestBody $request,
     ): \orb\orb\Models\Operations\PostCustomersResponse
     {
@@ -91,8 +90,7 @@ class Customer
      * @param \orb\orb\Models\Operations\GetCustomersCustomerIdRequest $request
      * @return \orb\orb\Models\Operations\GetCustomersCustomerIdResponse
      */
-	
-    public function get(
+	public function get(
         \orb\orb\Models\Operations\GetCustomersCustomerIdRequest $request,
     ): \orb\orb\Models\Operations\GetCustomersCustomerIdResponse
     {
@@ -140,8 +138,7 @@ class Customer
      * @param \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsRequest $request
      * @return \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsResponse
      */
-	
-    public function getBalance(
+	public function getBalance(
         \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsRequest $request,
     ): \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsResponse
     {
@@ -179,8 +176,7 @@ class Customer
      * @param \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdRequest $request
      * @return \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdResponse
      */
-	
-    public function getByExternalId(
+	public function getByExternalId(
         \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdRequest $request,
     ): \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdResponse
     {
@@ -282,8 +278,7 @@ class Customer
      * @param \orb\orb\Models\Operations\GetCustomerCostsRequest $request
      * @return \orb\orb\Models\Operations\GetCustomerCostsResponse
      */
-	
-    public function getCosts(
+	public function getCosts(
         \orb\orb\Models\Operations\GetCustomerCostsRequest $request,
     ): \orb\orb\Models\Operations\GetCustomerCostsResponse
     {
@@ -320,8 +315,7 @@ class Customer
      * @param \orb\orb\Models\Operations\GetExternalCustomerCostsRequest $request
      * @return \orb\orb\Models\Operations\GetExternalCustomerCostsResponse
      */
-	
-    public function getCostsByExternalId(
+	public function getCostsByExternalId(
         \orb\orb\Models\Operations\GetExternalCustomerCostsRequest $request,
     ): \orb\orb\Models\Operations\GetExternalCustomerCostsResponse
     {
@@ -361,8 +355,7 @@ class Customer
      * 
      * @return \orb\orb\Models\Operations\ListCustomersResponse
      */
-	
-    public function list(
+	public function list(
     ): \orb\orb\Models\Operations\ListCustomersResponse
     {
         $baseUrl = $this->_serverUrl;
@@ -399,8 +392,7 @@ class Customer
      * @param \orb\orb\Models\Operations\PutCustomersCustomerIdRequest $request
      * @return \orb\orb\Models\Operations\PutCustomersCustomerIdResponse
      */
-	
-    public function update(
+	public function update(
         \orb\orb\Models\Operations\PutCustomersCustomerIdRequest $request,
     ): \orb\orb\Models\Operations\PutCustomersCustomerIdResponse
     {
@@ -440,8 +432,7 @@ class Customer
      * @param \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequest $request
      * @return \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdResponse
      */
-	
-    public function updateByExternalId(
+	public function updateByExternalId(
         \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequest $request,
     ): \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdResponse
     {
@@ -532,8 +523,7 @@ class Customer
      * @param \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequest $request
      * @return \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageResponse
      */
-	
-    public function updateUsage(
+	public function updateUsage(
         \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequest $request,
     ): \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageResponse
     {
@@ -578,8 +568,7 @@ class Customer
      * @param \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequest $request
      * @return \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageResponse
      */
-	
-    public function updateUsageByExternalId(
+	public function updateUsageByExternalId(
         \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequest $request,
     ): \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageResponse
     {

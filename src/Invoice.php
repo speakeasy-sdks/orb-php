@@ -45,8 +45,7 @@ class Invoice
      * @param \orb\orb\Models\Operations\GetInvoiceInvoiceIdRequest $request
      * @return \orb\orb\Models\Operations\GetInvoiceInvoiceIdResponse
      */
-	
-    public function get(
+	public function get(
         \orb\orb\Models\Operations\GetInvoiceInvoiceIdRequest $request,
     ): \orb\orb\Models\Operations\GetInvoiceInvoiceIdResponse
     {
@@ -82,8 +81,7 @@ class Invoice
      * @param \orb\orb\Models\Operations\GetInvoicesUpcomingRequest $request
      * @return \orb\orb\Models\Operations\GetInvoicesUpcomingResponse
      */
-	
-    public function getUpcoming(
+	public function getUpcoming(
         \orb\orb\Models\Operations\GetInvoicesUpcomingRequest $request,
     ): \orb\orb\Models\Operations\GetInvoicesUpcomingResponse
     {
@@ -122,8 +120,7 @@ class Invoice
      * @param \orb\orb\Models\Operations\ListInvoicesRequest $request
      * @return \orb\orb\Models\Operations\ListInvoicesResponse
      */
-	
-    public function list(
+	public function list(
         \orb\orb\Models\Operations\ListInvoicesRequest $request,
     ): \orb\orb\Models\Operations\ListInvoicesResponse
     {
