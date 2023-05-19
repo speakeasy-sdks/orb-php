@@ -39,7 +39,7 @@ use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PostCustomersRequestBody;
 use \orb\orb\Models\Operations\PostCustomersRequestBodyBillingAddress;
-use \orb\orb\Models\Operations\PostCustomersRequestBodyPaymentProviderEnum;
+use \orb\orb\Models\Operations\PostCustomersRequestBodyPaymentProvider;
 use \orb\orb\Models\Operations\PostCustomersRequestBodyShippingAddress;
 
 $sdk = SDK::builder()
@@ -58,7 +58,7 @@ try {
     $request->email = 'Lexie_Howe68@gmail.com';
     $request->externalCustomerId = 'in';
     $request->name = 'Sheryl Kertzmann';
-    $request->paymentProvider = PostCustomersRequestBodyPaymentProviderEnum::QUICKBOOKS;
+    $request->paymentProvider = PostCustomersRequestBodyPaymentProvider::QUICKBOOKS;
     $request->paymentProviderId = 'ipsa';
     $request->shippingAddress = new PostCustomersRequestBodyShippingAddress();
     $request->shippingAddress->city = 'Parma';
@@ -275,7 +275,7 @@ require_once 'vendor/autoload.php';
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\GetCustomerCostsRequest;
-use \orb\orb\Models\Operations\GetCustomerCostsViewModeEnum;
+use \orb\orb\Models\Operations\GetCustomerCostsViewMode;
 
 $sdk = SDK::builder()
     ->build();
@@ -286,7 +286,7 @@ try {
     $request->groupBy = 'iure';
     $request->timeframeEnd = '2022-03-01T05:00:00Z';
     $request->timeframeStart = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-02-01T05:00:00Z');
-    $request->viewMode = GetCustomerCostsViewModeEnum::CUMULATIVE;
+    $request->viewMode = GetCustomerCostsViewMode::CUMULATIVE;
 
     $response = $sdk->customer->getCosts($request);
 
@@ -313,7 +313,7 @@ require_once 'vendor/autoload.php';
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\GetExternalCustomerCostsRequest;
-use \orb\orb\Models\Operations\GetExternalCustomerCostsViewModeEnum;
+use \orb\orb\Models\Operations\GetExternalCustomerCostsViewMode;
 
 $sdk = SDK::builder()
     ->build();
@@ -324,7 +324,7 @@ try {
     $request->groupBy = 'sapiente';
     $request->timeframeEnd = '2022-03-01T05:00:00Z';
     $request->timeframeStart = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-02-01T05:00:00Z');
-    $request->viewMode = GetExternalCustomerCostsViewModeEnum::PERIODIC;
+    $request->viewMode = GetExternalCustomerCostsViewMode::PERIODIC;
 
     $response = $sdk->customer->getCostsByExternalId($request);
 
@@ -388,7 +388,7 @@ use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PutCustomersCustomerIdRequest;
 use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBody;
 use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBodyBillingAddress;
-use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBodyPaymentProviderEnum;
+use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBodyPaymentProvider;
 use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBodyShippingAddress;
 
 $sdk = SDK::builder()
@@ -406,7 +406,7 @@ try {
     $request->requestBody->billingAddress->state = 'vitae';
     $request->requestBody->email = 'Madison77@hotmail.com';
     $request->requestBody->name = 'Mandy Hills';
-    $request->requestBody->paymentProvider = PutCustomersCustomerIdRequestBodyPaymentProviderEnum::STRIPE_INVOICE;
+    $request->requestBody->paymentProvider = PutCustomersCustomerIdRequestBodyPaymentProvider::STRIPE_INVOICE;
     $request->requestBody->paymentProviderId = 'quasi';
     $request->requestBody->shippingAddress = new PutCustomersCustomerIdRequestBodyShippingAddress();
     $request->requestBody->shippingAddress->city = 'Smithamchester';
@@ -446,7 +446,7 @@ use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequest;
 use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBody;
 use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyBillingAddress;
-use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProviderEnum;
+use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProvider;
 use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyShippingAddress;
 
 $sdk = SDK::builder()
@@ -464,7 +464,7 @@ try {
     $request->requestBody->billingAddress->state = 'repudiandae';
     $request->requestBody->email = 'Curt_Pouros@gmail.com';
     $request->requestBody->name = 'Joel Lang';
-    $request->requestBody->paymentProvider = PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProviderEnum::QUICKBOOKS;
+    $request->requestBody->paymentProvider = PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProvider::QUICKBOOKS;
     $request->requestBody->paymentProviderId = 'repudiandae';
     $request->requestBody->shippingAddress = new PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyShippingAddress();
     $request->requestBody->shippingAddress->city = 'Arnoldoshire';

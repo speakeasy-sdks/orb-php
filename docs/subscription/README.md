@@ -46,14 +46,14 @@ require_once 'vendor/autoload.php';
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelRequest;
-use \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelCancelOptionEnum;
+use \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelCancelOption;
 
 $sdk = SDK::builder()
     ->build();
 
 try {
     $request = new PostSubscriptionsSubscriptionIdCancelRequest();
-    $request->cancelOption = PostSubscriptionsSubscriptionIdCancelCancelOptionEnum::END_OF_SUBSCRIPTION_TERM;
+    $request->cancelOption = PostSubscriptionsSubscriptionIdCancelCancelOption::END_OF_SUBSCRIPTION_TERM;
     $request->subscriptionId = 'voluptate';
 
     $response = $sdk->subscription->cancel($request);
@@ -100,7 +100,7 @@ use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequest;
 use \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBody;
-use \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOptionEnum;
+use \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOption;
 
 $sdk = SDK::builder()
     ->build();
@@ -110,7 +110,7 @@ try {
     $request->requestBody = new PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBody();
     $request->requestBody->alignBillingWithPlanChangeDate = false;
     $request->requestBody->changeDate = DateTime::createFromFormat('Y-m-d', '2022-01-01');
-    $request->requestBody->changeOption = PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOptionEnum::END_OF_SUBSCRIPTION_TERM;
+    $request->requestBody->changeOption = PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOption::END_OF_SUBSCRIPTION_TERM;
     $request->requestBody->externalPlanId = 'ZMwNQefe7J3ecf7W';
     $request->requestBody->minimumAmount = '1.23';
     $request->requestBody->planId = 'ZMwNQefe7J3ecf7W';
@@ -488,7 +488,7 @@ require_once 'vendor/autoload.php';
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PostSubscriptionsRequestBody;
-use \orb\orb\Models\Operations\PostSubscriptionsRequestBodyExternalMarketplaceEnum;
+use \orb\orb\Models\Operations\PostSubscriptionsRequestBodyExternalMarketplace;
 use \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPhaseOverrides;
 
 $sdk = SDK::builder()
@@ -499,7 +499,7 @@ try {
     $request->alignBillingWithSubscriptionStartDate = false;
     $request->customerId = '97DPcZE9hxsbb9Y9';
     $request->externalCustomerId = 'perferendis';
-    $request->externalMarketplace = PostSubscriptionsRequestBodyExternalMarketplaceEnum::GOOGLE;
+    $request->externalMarketplace = PostSubscriptionsRequestBodyExternalMarketplace::GOOGLE;
     $request->externalMarketplaceReportingId = 'project_number:983410661111';
     $request->externalPlanId = 'fugiat';
     $request->minimumAmount = '1.23';
@@ -765,7 +765,7 @@ require_once 'vendor/autoload.php';
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageRequest;
-use \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageGranularityEnum;
+use \orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageGranularity;
 
 $sdk = SDK::builder()
     ->build();
@@ -773,7 +773,7 @@ $sdk = SDK::builder()
 try {
     $request = new GetSubscriptionsSubscriptionIdUsageRequest();
     $request->billableMetricId = 'quis';
-    $request->granularity = GetSubscriptionsSubscriptionIdUsageGranularityEnum::DAY;
+    $request->granularity = GetSubscriptionsSubscriptionIdUsageGranularity::DAY;
     $request->groupBy = 'totam';
     $request->subscriptionId = 'dignissimos';
     $request->timeframeEnd = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-02-02T05:00:00Z');

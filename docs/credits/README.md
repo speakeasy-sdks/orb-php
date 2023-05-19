@@ -79,7 +79,7 @@ use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequest;
 use \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequestBody;
-use \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryTypeEnum;
+use \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryType;
 
 $sdk = SDK::builder()
     ->build();
@@ -90,7 +90,7 @@ try {
     $request->requestBody->amount = 7206.33;
     $request->requestBody->blockId = 'officia';
     $request->requestBody->description = 'occaecati';
-    $request->requestBody->entryType = PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryTypeEnum::INCREMENT;
+    $request->requestBody->entryType = PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryType::INCREMENT;
     $request->requestBody->expiryDate = DateTime::createFromFormat('Y-m-d', '2023-01-01');
     $request->requestBody->perUnitCostBasis = 'deleniti';
     $request->requestBody->targetExpiryDate = DateTime::createFromFormat('Y-m-d', '2023-02-01');
@@ -186,8 +186,8 @@ require_once 'vendor/autoload.php';
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerRequest;
-use \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerEntryStatusEnum;
-use \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerEntryTypeEnum;
+use \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerEntryStatus;
+use \orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerEntryType;
 
 $sdk = SDK::builder()
     ->build();
@@ -195,8 +195,8 @@ $sdk = SDK::builder()
 try {
     $request = new GetCustomersCustomerIdCreditsLedgerRequest();
     $request->customerId = 'totam';
-    $request->entryStatus = GetCustomersCustomerIdCreditsLedgerEntryStatusEnum::COMMITTED;
-    $request->entryType = GetCustomersCustomerIdCreditsLedgerEntryTypeEnum::DECREMENT;
+    $request->entryStatus = GetCustomersCustomerIdCreditsLedgerEntryStatus::COMMITTED;
+    $request->entryType = GetCustomersCustomerIdCreditsLedgerEntryType::DECREMENT;
     $request->minimumAmount = 4736;
 
     $response = $sdk->credits->getCreditsLedger($request);

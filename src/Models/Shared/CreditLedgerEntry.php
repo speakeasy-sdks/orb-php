@@ -62,15 +62,15 @@ class CreditLedgerEntry
     /**
      * Committed entries are older than the ingestion grace period, and cannot change. Pending entries are newer than the grace period and are subject to updates
      * 
-     * @var \orb\orb\Models\Shared\CreditLedgerEntryEntryStatusEnum $entryStatus
+     * @var \orb\orb\Models\Shared\CreditLedgerEntryEntryStatus $entryStatus
      */
 	#[\JMS\Serializer\Annotation\SerializedName('entry_status')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CreditLedgerEntryEntryStatusEnum>')]
-    public CreditLedgerEntryEntryStatusEnum $entryStatus;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CreditLedgerEntryEntryStatus>')]
+    public CreditLedgerEntryEntryStatus $entryStatus;
     
 	#[\JMS\Serializer\Annotation\SerializedName('entry_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CreditLedgerEntryEntryTypeEnum>')]
-    public CreditLedgerEntryEntryTypeEnum $entryType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CreditLedgerEntryEntryType>')]
+    public CreditLedgerEntryEntryType $entryType;
     
 	#[\JMS\Serializer\Annotation\SerializedName('event_id')]
     #[\JMS\Serializer\Annotation\Type('string')]
@@ -107,8 +107,8 @@ class CreditLedgerEntry
 		$this->customer = new \orb\orb\Models\Shared\CreditLedgerEntryCustomer();
 		$this->description = "";
 		$this->endingBalance = 0;
-		$this->entryStatus = \orb\orb\Models\Shared\CreditLedgerEntryEntryStatusEnum::COMMITTED;
-		$this->entryType = \orb\orb\Models\Shared\CreditLedgerEntryEntryTypeEnum::INCREMENT;
+		$this->entryStatus = \orb\orb\Models\Shared\CreditLedgerEntryEntryStatus::COMMITTED;
+		$this->entryType = \orb\orb\Models\Shared\CreditLedgerEntryEntryType::INCREMENT;
 		$this->eventId = null;
 		$this->id = "";
 		$this->ledgerSequenceNumber = 0;

@@ -37,12 +37,12 @@ class PutCustomersExternalCustomerIdExternalCustomerIdRequestBody
      * - the connection must first be configured in the Orb webapp. 
      * - if the provider is an invoicing provider (`stripe_invoice`, `quickbooks`, `bill.com`), any product mappings must first be configured with the Orb team.
      * 
-     * @var ?\orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProviderEnum $paymentProvider
+     * @var ?\orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProvider $paymentProvider
      */
 	#[\JMS\Serializer\Annotation\SerializedName('payment_provider')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProviderEnum>')]
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProvider>')]
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
-    public ?PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProviderEnum $paymentProvider = null;
+    public ?PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProvider $paymentProvider = null;
     
     /**
      * The ID of this customer in an external payments solution, such as Stripe. This is used for creating charges or invoices in the external system via Orb.

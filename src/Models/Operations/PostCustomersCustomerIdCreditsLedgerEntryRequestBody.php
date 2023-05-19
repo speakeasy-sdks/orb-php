@@ -36,8 +36,8 @@ class PostCustomersCustomerIdCreditsLedgerEntryRequestBody
     public ?string $description = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('entry_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryTypeEnum>')]
-    public PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryTypeEnum $entryType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryType>')]
+    public PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryType $entryType;
     
     /**
      * A future date (specified in YYYY-MM-DD format) that denotes when this credit balance should expire.
@@ -77,7 +77,7 @@ class PostCustomersCustomerIdCreditsLedgerEntryRequestBody
 		$this->amount = 0;
 		$this->blockId = null;
 		$this->description = null;
-		$this->entryType = \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryTypeEnum::INCREMENT;
+		$this->entryType = \orb\orb\Models\Operations\PostCustomersCustomerIdCreditsLedgerEntryRequestBodyEntryType::INCREMENT;
 		$this->expiryDate = null;
 		$this->perUnitCostBasis = null;
 		$this->targetExpiryDate = null;

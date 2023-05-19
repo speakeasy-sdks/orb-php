@@ -22,10 +22,10 @@ class GetSubscriptionsSubscriptionIdUsageRequest
     /**
      * This determines the windowing of usage reporting.
      * 
-     * @var ?\orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageGranularityEnum $granularity
+     * @var ?\orb\orb\Models\Operations\GetSubscriptionsSubscriptionIdUsageGranularity $granularity
      */
 	#[SpeakeasyMetadata('queryParam:style=form,explode=true,name=granularity')]
-    public ?GetSubscriptionsSubscriptionIdUsageGranularityEnum $granularity = null;
+    public ?GetSubscriptionsSubscriptionIdUsageGranularity $granularity = null;
     
     /**
      * When specified in conjunction with `billable_metric_id`, this parameter groups by the key provided. Note that both `group_by` and `billable_metric_id` must be specific together.

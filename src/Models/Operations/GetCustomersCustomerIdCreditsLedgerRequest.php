@@ -17,18 +17,18 @@ class GetCustomersCustomerIdCreditsLedgerRequest
     /**
      * Filters to a single status of ledger entry
      * 
-     * @var ?\orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerEntryStatusEnum $entryStatus
+     * @var ?\orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerEntryStatus $entryStatus
      */
 	#[SpeakeasyMetadata('queryParam:style=form,explode=true,name=entry_status')]
-    public ?GetCustomersCustomerIdCreditsLedgerEntryStatusEnum $entryStatus = null;
+    public ?GetCustomersCustomerIdCreditsLedgerEntryStatus $entryStatus = null;
     
     /**
      * Filter to a single type of ledger entry
      * 
-     * @var ?\orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerEntryTypeEnum $entryType
+     * @var ?\orb\orb\Models\Operations\GetCustomersCustomerIdCreditsLedgerEntryType $entryType
      */
 	#[SpeakeasyMetadata('queryParam:style=form,explode=true,name=entry_type')]
-    public ?GetCustomersCustomerIdCreditsLedgerEntryTypeEnum $entryType = null;
+    public ?GetCustomersCustomerIdCreditsLedgerEntryType $entryType = null;
     
     /**
      * Filter to ledger entries that affect at least this amount

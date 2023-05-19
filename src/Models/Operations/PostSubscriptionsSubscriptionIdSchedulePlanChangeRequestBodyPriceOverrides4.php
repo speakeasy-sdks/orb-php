@@ -32,8 +32,8 @@ class PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides
     public ?string $minimumAmount = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('model_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides4ModelTypeEnum>')]
-    public PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides4ModelTypeEnum $modelType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides4ModelType>')]
+    public PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides4ModelType $modelType;
     
 	#[\JMS\Serializer\Annotation\SerializedName('package_config')]
     #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides4PackageConfig')]
@@ -43,7 +43,7 @@ class PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides
 	{
 		$this->id = "";
 		$this->minimumAmount = null;
-		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides4ModelTypeEnum::PACKAGE;
+		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides4ModelType::PACKAGE;
 		$this->packageConfig = new \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides4PackageConfig();
 	}
 }

@@ -34,11 +34,11 @@ class PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBody
     /**
      * Determines the timing of the plan change
      * 
-     * @var \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOptionEnum $changeOption
+     * @var \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOption $changeOption
      */
 	#[\JMS\Serializer\Annotation\SerializedName('change_option')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOptionEnum>')]
-    public PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOptionEnum $changeOption;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOption>')]
+    public PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOption $changeOption;
     
     /**
      * The external_plan_id of the plan that the given subscription should be switched to. Note that either this property or `plan_id` must be specified.
@@ -84,7 +84,7 @@ class PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBody
 	{
 		$this->alignBillingWithPlanChangeDate = null;
 		$this->changeDate = null;
-		$this->changeOption = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOptionEnum::REQUESTED_DATE;
+		$this->changeOption = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyChangeOption::REQUESTED_DATE;
 		$this->externalPlanId = null;
 		$this->minimumAmount = null;
 		$this->planId = null;

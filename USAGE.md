@@ -9,7 +9,7 @@ use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PostCustomersRequestBody;
 use \orb\orb\Models\Operations\PostCustomersRequestBodyBillingAddress;
-use \orb\orb\Models\Operations\PostCustomersRequestBodyPaymentProviderEnum;
+use \orb\orb\Models\Operations\PostCustomersRequestBodyPaymentProvider;
 use \orb\orb\Models\Operations\PostCustomersRequestBodyShippingAddress;
 
 $sdk = SDK::builder()
@@ -28,7 +28,7 @@ try {
     $request->email = 'Geraldine_Kreiger52@gmail.com';
     $request->externalCustomerId = 'iusto';
     $request->name = 'Charlie Walsh II';
-    $request->paymentProvider = PostCustomersRequestBodyPaymentProviderEnum::QUICKBOOKS;
+    $request->paymentProvider = PostCustomersRequestBodyPaymentProvider::QUICKBOOKS;
     $request->paymentProviderId = 'deserunt';
     $request->shippingAddress = new PostCustomersRequestBodyShippingAddress();
     $request->shippingAddress->city = 'West Ritaworth';

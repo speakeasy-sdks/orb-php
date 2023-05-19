@@ -47,8 +47,8 @@ class PostSubscriptionsRequestBodyPriceOverrides1
     public ?string $minimumAmount = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('model_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides1ModelTypeEnum>')]
-    public PostSubscriptionsRequestBodyPriceOverrides1ModelTypeEnum $modelType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides1ModelType>')]
+    public PostSubscriptionsRequestBodyPriceOverrides1ModelType $modelType;
     
 	#[\JMS\Serializer\Annotation\SerializedName('tiered_config')]
     #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides1TieredConfig')]
@@ -59,7 +59,7 @@ class PostSubscriptionsRequestBodyPriceOverrides1
 		$this->discount = null;
 		$this->id = "";
 		$this->minimumAmount = null;
-		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides1ModelTypeEnum::TIERED;
+		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides1ModelType::TIERED;
 		$this->tieredConfig = new \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides1TieredConfig();
 	}
 }

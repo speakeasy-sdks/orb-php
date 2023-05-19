@@ -212,7 +212,7 @@ use \orb\orb\Models\Shared\Security;
 use \orb\orb\Models\Operations\PostIngestRequest;
 use \orb\orb\Models\Operations\PostIngestRequestBody;
 use \orb\orb\Models\Operations\PostIngestRequestBodyEvents;
-use \orb\orb\Models\Operations\PostIngestDebugEnum;
+use \orb\orb\Models\Operations\PostIngestDebug;
 
 $sdk = SDK::builder()
     ->build();
@@ -225,7 +225,7 @@ try {
         new PostIngestRequestBodyEvents(),
         new PostIngestRequestBodyEvents(),
     ];
-    $request->debug = PostIngestDebugEnum::TRUE;
+    $request->debug = PostIngestDebug::TRUE;
 
     $response = $sdk->event->ingest($request);
 
