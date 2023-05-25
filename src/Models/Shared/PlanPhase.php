@@ -44,11 +44,11 @@ class PlanPhase
     /**
      * Term for this plan, which is the maximum cadence among all component prices
      * 
-     * @var \orb\orb\Models\Shared\PlanPhaseDurationUnitEnum $durationUnit
+     * @var \orb\orb\Models\Shared\PlanPhaseDurationUnit $durationUnit
      */
 	#[\JMS\Serializer\Annotation\SerializedName('duration_unit')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PlanPhaseDurationUnitEnum>')]
-    public PlanPhaseDurationUnitEnum $durationUnit;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PlanPhaseDurationUnit>')]
+    public PlanPhaseDurationUnit $durationUnit;
     
     /**
      * $minimum
@@ -79,7 +79,7 @@ class PlanPhase
 		$this->description = null;
 		$this->discount = [];
 		$this->duration = null;
-		$this->durationUnit = \orb\orb\Models\Shared\PlanPhaseDurationUnitEnum::MONTHLY;
+		$this->durationUnit = \orb\orb\Models\Shared\PlanPhaseDurationUnit::MONTHLY;
 		$this->minimum = [];
 		$this->name = null;
 		$this->order = null;

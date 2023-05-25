@@ -14,17 +14,17 @@ class PostSubscriptionsSubscriptionIdCancelRequest
     /**
      * Determines the timing of subscription cancellation
      * 
-     * @var \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelCancelOptionEnum $cancelOption
+     * @var \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelCancelOption $cancelOption
      */
 	#[SpeakeasyMetadata('queryParam:style=form,explode=true,name=cancel_option')]
-    public PostSubscriptionsSubscriptionIdCancelCancelOptionEnum $cancelOption;
+    public PostSubscriptionsSubscriptionIdCancelCancelOption $cancelOption;
     
 	#[SpeakeasyMetadata('pathParam:style=simple,explode=false,name=subscription_id')]
     public string $subscriptionId;
     
 	public function __construct()
 	{
-		$this->cancelOption = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelCancelOptionEnum::END_OF_SUBSCRIPTION_TERM;
+		$this->cancelOption = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdCancelCancelOption::END_OF_SUBSCRIPTION_TERM;
 		$this->subscriptionId = "";
 	}
 }

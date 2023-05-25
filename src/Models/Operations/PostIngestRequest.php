@@ -17,10 +17,10 @@ class PostIngestRequest
     /**
      * Flag to enable additional debug information in the endpoint response
      * 
-     * @var ?\orb\orb\Models\Operations\PostIngestDebugEnum $debug
+     * @var ?\orb\orb\Models\Operations\PostIngestDebug $debug
      */
 	#[SpeakeasyMetadata('queryParam:style=form,explode=true,name=debug')]
-    public ?PostIngestDebugEnum $debug = null;
+    public ?PostIngestDebug $debug = null;
     
 	public function __construct()
 	{

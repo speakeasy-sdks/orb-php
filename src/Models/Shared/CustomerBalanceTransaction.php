@@ -20,11 +20,11 @@ class CustomerBalanceTransaction
     /**
      * Describes the reason that this transaction took place.
      * 
-     * @var \orb\orb\Models\Shared\CustomerBalanceTransactionActionEnum $action
+     * @var \orb\orb\Models\Shared\CustomerBalanceTransactionAction $action
      */
 	#[\JMS\Serializer\Annotation\SerializedName('action')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CustomerBalanceTransactionActionEnum>')]
-    public CustomerBalanceTransactionActionEnum $action;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CustomerBalanceTransactionAction>')]
+    public CustomerBalanceTransactionAction $action;
     
     /**
      * The value of the amount changed in the transaction.
@@ -91,7 +91,7 @@ class CustomerBalanceTransaction
     
 	public function __construct()
 	{
-		$this->action = \orb\orb\Models\Shared\CustomerBalanceTransactionActionEnum::APPLIED_TO_INVOICE;
+		$this->action = \orb\orb\Models\Shared\CustomerBalanceTransactionAction::APPLIED_TO_INVOICE;
 		$this->amount = "";
 		$this->createdAt = new \DateTime();
 		$this->description = "";

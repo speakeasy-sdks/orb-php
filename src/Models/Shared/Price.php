@@ -230,9 +230,9 @@ class Price
     public ?PriceBulkConfig $bulkConfig = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('cadence')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PriceCadenceEnum>')]
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PriceCadence>')]
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
-    public ?PriceCadenceEnum $cadence = null;
+    public ?PriceCadence $cadence = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('created_at')]
     #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
@@ -292,9 +292,9 @@ class Price
     public array $minimum;
     
 	#[\JMS\Serializer\Annotation\SerializedName('model_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PriceModelTypeEnum>')]
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PriceModelType>')]
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
-    public ?PriceModelTypeEnum $modelType = null;
+    public ?PriceModelType $modelType = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('name')]
     #[\JMS\Serializer\Annotation\Type('string')]

@@ -32,8 +32,8 @@ class PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides
     public ?string $minimumAmount = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('model_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides7ModelTypeEnum>')]
-    public PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides7ModelTypeEnum $modelType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides7ModelType>')]
+    public PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides7ModelType $modelType;
     
 	#[\JMS\Serializer\Annotation\SerializedName('tiered_bps_config')]
     #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides7TieredBpsConfig')]
@@ -43,7 +43,7 @@ class PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides
 	{
 		$this->id = "";
 		$this->minimumAmount = null;
-		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides7ModelTypeEnum::TIERED_BPS;
+		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides7ModelType::TIERED_BPS;
 		$this->tieredBpsConfig = new \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides7TieredBpsConfig();
 	}
 }

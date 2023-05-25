@@ -46,8 +46,8 @@ class PostSubscriptionsRequestBodyPriceOverrides5
     public ?string $minimumAmount = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('model_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides5ModelTypeEnum>')]
-    public PostSubscriptionsRequestBodyPriceOverrides5ModelTypeEnum $modelType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides5ModelType>')]
+    public PostSubscriptionsRequestBodyPriceOverrides5ModelType $modelType;
     
 	public function __construct()
 	{
@@ -55,6 +55,6 @@ class PostSubscriptionsRequestBodyPriceOverrides5
 		$this->discount = null;
 		$this->id = "";
 		$this->minimumAmount = null;
-		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides5ModelTypeEnum::BPS;
+		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides5ModelType::BPS;
 	}
 }

@@ -123,12 +123,12 @@ class Invoice
     /**
      * The status of this invoice as known to Orb. Invoices that have been issued for past billing periods are marked `"issued"`. Invoices will be marked `"paid"` upon confirmation of successful automatic payment collection by Orb. Invoices synced to an external billing provider (such as Bill.com, QuickBooks, or Stripe Invoicing) will be marked as `"synced"`.
      * 
-     * @var ?\orb\orb\Models\Shared\InvoiceStatusEnum $status
+     * @var ?\orb\orb\Models\Shared\InvoiceStatus $status
      */
 	#[\JMS\Serializer\Annotation\SerializedName('status')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\InvoiceStatusEnum>')]
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\InvoiceStatus>')]
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
-    public ?InvoiceStatusEnum $status = null;
+    public ?InvoiceStatus $status = null;
     
     /**
      * The associated subscription for this invoice.

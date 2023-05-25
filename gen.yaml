@@ -2,14 +2,15 @@ configVersion: 1.0.0
 management:
   docChecksum: 7dcd1bb0903bbc5deea5fbbd3a2ec5b0
   docVersion: "1.0"
-  speakeasyVersion: 1.19.3
-  generationVersion: 2.16.7
+  speakeasyVersion: 1.37.11
+  generationVersion: 2.32.2
 generation:
-  telemetryEnabled: false
   sdkClassName: SDK
   sdkFlattening: true
   singleTagPerOp: false
+  telemetryEnabled: false
 php:
-  version: 1.0.0
+  version: 1.1.0
+  maxMethodParams: 0
   namespace: orb\orb
   packageName: orb/orb-api

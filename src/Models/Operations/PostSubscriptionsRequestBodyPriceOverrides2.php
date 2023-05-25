@@ -47,8 +47,8 @@ class PostSubscriptionsRequestBodyPriceOverrides2
     public ?string $minimumAmount = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('model_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides2ModelTypeEnum>')]
-    public PostSubscriptionsRequestBodyPriceOverrides2ModelTypeEnum $modelType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides2ModelType>')]
+    public PostSubscriptionsRequestBodyPriceOverrides2ModelType $modelType;
     
 	#[\JMS\Serializer\Annotation\SerializedName('unit_config')]
     #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides2UnitConfig')]
@@ -60,7 +60,7 @@ class PostSubscriptionsRequestBodyPriceOverrides2
 		$this->fixedPriceQuantity = null;
 		$this->id = "";
 		$this->minimumAmount = null;
-		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides2ModelTypeEnum::UNIT;
+		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides2ModelType::UNIT;
 		$this->unitConfig = new \orb\orb\Models\Operations\PostSubscriptionsRequestBodyPriceOverrides2UnitConfig();
 	}
 }

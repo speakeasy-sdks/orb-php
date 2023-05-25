@@ -44,12 +44,12 @@ class PostSubscriptionsRequestBody
     /**
      * Optionally provide the name of the external marketplace that the subscription is attached to.
      * 
-     * @var ?\orb\orb\Models\Operations\PostSubscriptionsRequestBodyExternalMarketplaceEnum $externalMarketplace
+     * @var ?\orb\orb\Models\Operations\PostSubscriptionsRequestBodyExternalMarketplace $externalMarketplace
      */
 	#[\JMS\Serializer\Annotation\SerializedName('external_marketplace')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsRequestBodyExternalMarketplaceEnum>')]
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsRequestBodyExternalMarketplace>')]
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
-    public ?PostSubscriptionsRequestBodyExternalMarketplaceEnum $externalMarketplace = null;
+    public ?PostSubscriptionsRequestBodyExternalMarketplace $externalMarketplace = null;
     
     /**
      * The reporting ID to associate this subscription with the external marketplace. Required if external_marketplace is specified.

@@ -41,10 +41,10 @@ class GetExternalCustomerCostsRequest
     /**
      * Controls whether Orb returns cumulative costs since the start of the billing period, or incremental day-by-day costs. If your customer has minimums or discounts, it's strongly recommended that you use the default cumulative behavior.
      * 
-     * @var ?\orb\orb\Models\Operations\GetExternalCustomerCostsViewModeEnum $viewMode
+     * @var ?\orb\orb\Models\Operations\GetExternalCustomerCostsViewMode $viewMode
      */
 	#[SpeakeasyMetadata('queryParam:style=form,explode=true,name=view_mode')]
-    public ?GetExternalCustomerCostsViewModeEnum $viewMode = null;
+    public ?GetExternalCustomerCostsViewMode $viewMode = null;
     
 	public function __construct()
 	{

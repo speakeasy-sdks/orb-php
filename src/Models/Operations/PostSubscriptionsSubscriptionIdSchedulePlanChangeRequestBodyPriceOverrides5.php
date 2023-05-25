@@ -36,14 +36,14 @@ class PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides
     public ?string $minimumAmount = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('model_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides5ModelTypeEnum>')]
-    public PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides5ModelTypeEnum $modelType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides5ModelType>')]
+    public PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides5ModelType $modelType;
     
 	public function __construct()
 	{
 		$this->bpsConfig = new \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides5BpsConfig();
 		$this->id = "";
 		$this->minimumAmount = null;
-		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides5ModelTypeEnum::BPS;
+		$this->modelType = \orb\orb\Models\Operations\PostSubscriptionsSubscriptionIdSchedulePlanChangeRequestBodyPriceOverrides5ModelType::BPS;
 	}
 }

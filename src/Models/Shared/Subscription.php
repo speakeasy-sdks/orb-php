@@ -101,8 +101,8 @@ class Subscription
     public \DateTime $startDate;
     
 	#[\JMS\Serializer\Annotation\SerializedName('status')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\SubscriptionStatusEnum>')]
-    public SubscriptionStatusEnum $status;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\SubscriptionStatus>')]
+    public SubscriptionStatus $status;
     
 	public function __construct()
 	{
@@ -115,6 +115,6 @@ class Subscription
 		$this->id = "";
 		$this->plan = new \orb\orb\Models\Shared\Plan();
 		$this->startDate = new \DateTime();
-		$this->status = \orb\orb\Models\Shared\SubscriptionStatusEnum::ACTIVE;
+		$this->status = \orb\orb\Models\Shared\SubscriptionStatus::ACTIVE;
 	}
 }

@@ -91,11 +91,11 @@ class Customer
     /**
      * The external payments or invoicing solution connected to this customer.
      * 
-     * @var \orb\orb\Models\Shared\CustomerPaymentProviderEnum $paymentProvider
+     * @var \orb\orb\Models\Shared\CustomerPaymentProvider $paymentProvider
      */
 	#[\JMS\Serializer\Annotation\SerializedName('payment_provider')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CustomerPaymentProviderEnum>')]
-    public CustomerPaymentProviderEnum $paymentProvider;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CustomerPaymentProvider>')]
+    public CustomerPaymentProvider $paymentProvider;
     
     /**
      * The ID of this customer in an external payments solution, such as Stripe. This is used for creating charges or invoices in the external system via Orb.
@@ -135,7 +135,7 @@ class Customer
 		$this->externalCustomerId = null;
 		$this->id = "";
 		$this->name = "";
-		$this->paymentProvider = \orb\orb\Models\Shared\CustomerPaymentProviderEnum::STRIPE;
+		$this->paymentProvider = \orb\orb\Models\Shared\CustomerPaymentProvider::STRIPE;
 		$this->paymentProviderId = "";
 		$this->shippingAddress = null;
 		$this->timezone = "";
