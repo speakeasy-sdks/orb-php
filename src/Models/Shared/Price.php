@@ -248,14 +248,9 @@ class Price
     #[\JMS\Serializer\Annotation\Type('string')]
     public string $currency;
     
-    /**
-     * $discount
-     * 
-     * @var array<string, mixed> $discount
-     */
 	#[\JMS\Serializer\Annotation\SerializedName('discount')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $discount;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\Discount')]
+    public Discount $discount;
     
     /**
      * If the Price represents a fixed cost, this represents the quantity of units applied. Mutually exclusive with billable_metric.
@@ -282,14 +277,9 @@ class Price
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
     public ?PriceMatrixConfig $matrixConfig = null;
     
-    /**
-     * $minimum
-     * 
-     * @var array<string, mixed> $minimum
-     */
 	#[\JMS\Serializer\Annotation\SerializedName('minimum')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $minimum;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\MinimumAmount')]
+    public MinimumAmount $minimum;
     
 	#[\JMS\Serializer\Annotation\SerializedName('model_type')]
     #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PriceModelType>')]
@@ -359,11 +349,11 @@ class Price
 		$this->cadence = null;
 		$this->createdAt = null;
 		$this->currency = "";
-		$this->discount = [];
+		$this->discount = new \orb\orb\Models\Shared\Discount();
 		$this->fixedPriceQuantity = null;
 		$this->id = null;
 		$this->matrixConfig = null;
-		$this->minimum = [];
+		$this->minimum = new \orb\orb\Models\Shared\MinimumAmount();
 		$this->modelType = null;
 		$this->name = null;
 		$this->packageConfig = null;

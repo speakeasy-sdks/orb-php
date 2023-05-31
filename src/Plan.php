@@ -51,7 +51,7 @@ class Plan
      * @param \orb\orb\Models\Operations\GetPlansPlanIdRequest $request
      * @return \orb\orb\Models\Operations\GetPlansPlanIdResponse
      */
-	public function get(
+	public function fetch(
         \orb\orb\Models\Operations\GetPlansPlanIdRequest $request,
     ): \orb\orb\Models\Operations\GetPlansPlanIdResponse
     {
@@ -102,7 +102,7 @@ class Plan
         $options = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, "plan", "json");
         $options = array_merge_recursive($options, $body);
-        $options['headers']['Accept'] = '*/*';
+        $options['headers']['Accept'] = 'application/json';
         $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
         
         $httpResponse = $this->_securityClient->request('GET', $url, $options);
@@ -115,6 +115,10 @@ class Plan
         $response->rawResponse = $httpResponse;
         
         if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->plan = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Plan', 'json');
+            }
         }
 
         return $response;
@@ -125,23 +129,19 @@ class Plan
      * 
      * This endpoint returns a list of all [plans](../reference/Orb-API.json/components/schemas/Plan) for an account in a list format. 
      * 
-     * The list of plans is ordered starting from the most recently created plan. The response also includes [`pagination_metadata`](../reference/Orb-API.json/components/schemas/Pagination-metadata), which lets the caller retrieve the next page of results if they exist. More information about pagination can be found in the [Pagination-metadata schema](../reference/Orb-API.json/components/schemas/Pagination-metadata).
+     * The list of plans is ordered starting from the most recently created plan. The response also includes [`pagination_metadata`](../api/pagination), which lets the caller retrieve the next page of results if they exist.
      * 
      * 
-     * @param \orb\orb\Models\Operations\ListPlansRequestBody $request
      * @return \orb\orb\Models\Operations\ListPlansResponse
      */
 	public function list(
-        \orb\orb\Models\Operations\ListPlansRequestBody $request,
     ): \orb\orb\Models\Operations\ListPlansResponse
     {
         $baseUrl = $this->_serverUrl;
         $url = Utils\Utils::generateUrl($baseUrl, '/plans');
         
         $options = ['http_errors' => false];
-        $body = Utils\Utils::serializeRequestBody($request, "request", "json");
-        $options = array_merge_recursive($options, $body);
-        $options['headers']['Accept'] = '*/*';
+        $options['headers']['Accept'] = 'application/json';
         $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
         
         $httpResponse = $this->_securityClient->request('GET', $url, $options);
@@ -154,6 +154,10 @@ class Plan
         $response->rawResponse = $httpResponse;
         
         if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->listPlans200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\ListPlans200ApplicationJSON', 'json');
+            }
         }
 
         return $response;

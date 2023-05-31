@@ -18,6 +18,16 @@ namespace orb\orb\Models\Shared;
 class Plan
 {
     /**
+     * The parent plan if the given plan was created by overriding one or more of the parent's prices
+     * 
+     * @var ?\orb\orb\Models\Shared\PlanBasePlan $basePlan
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('base_plan')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\PlanBasePlan')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?PlanBasePlan $basePlan = null;
+    
+    /**
      * The parent plan id if the given plan was created by overriding one or more of the parent's prices
      * 
      * @var ?string $basePlanId
@@ -40,18 +50,23 @@ class Plan
     #[\JMS\Serializer\Annotation\Type('string')]
     public string $currency;
     
+    /**
+     * The default memo text on the invoices corresponding to subscriptions on this plan. Note that each subscription may configure its own memo.
+     * 
+     * @var ?string $defaultInvoiceMemo
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('default_invoice_memo')]
+    #[\JMS\Serializer\Annotation\Type('string')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?string $defaultInvoiceMemo = null;
+    
 	#[\JMS\Serializer\Annotation\SerializedName('description')]
     #[\JMS\Serializer\Annotation\Type('string')]
     public string $description;
     
-    /**
-     * $discount
-     * 
-     * @var array<string, mixed> $discount
-     */
 	#[\JMS\Serializer\Annotation\SerializedName('discount')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $discount;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\Discount')]
+    public Discount $discount;
     
     /**
      * An optional user-defined ID for this plan resource, used throughout the system as an alias for this Plan. Use this field to identify a plan by an existing identifier in your system.
@@ -76,18 +91,23 @@ class Plan
     #[\JMS\Serializer\Annotation\Type('string')]
     public string $invoicingCurrency;
     
-    /**
-     * $minimum
-     * 
-     * @var array<string, mixed> $minimum
-     */
 	#[\JMS\Serializer\Annotation\SerializedName('minimum')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $minimum;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\MinimumAmount')]
+    public MinimumAmount $minimum;
     
 	#[\JMS\Serializer\Annotation\SerializedName('name')]
     #[\JMS\Serializer\Annotation\Type('string')]
     public string $name;
+    
+    /**
+     * Determines the difference between the invoice issue date and the due date. A value of "0" here signifies that invoices are due on issue, whereas a value of "30" means that the customer has a month to pay the invoice before its overdue. Note that individual subscriptions or invoices may set a different net terms configuration.
+     * 
+     * @var ?int $netTerms
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('net_terms')]
+    #[\JMS\Serializer\Annotation\Type('int')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?int $netTerms = null;
     
     /**
      * $planPhases
@@ -119,16 +139,19 @@ class Plan
     
 	public function __construct()
 	{
+		$this->basePlan = null;
 		$this->basePlanId = null;
 		$this->createdAt = new \DateTime();
 		$this->currency = "";
+		$this->defaultInvoiceMemo = null;
 		$this->description = "";
-		$this->discount = [];
+		$this->discount = new \orb\orb\Models\Shared\Discount();
 		$this->externalPlanId = null;
 		$this->id = "";
 		$this->invoicingCurrency = "";
-		$this->minimum = [];
+		$this->minimum = new \orb\orb\Models\Shared\MinimumAmount();
 		$this->name = "";
+		$this->netTerms = null;
 		$this->planPhases = null;
 		$this->prices = [];
 		$this->product = new \orb\orb\Models\Shared\PlanProduct();

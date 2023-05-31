@@ -38,6 +38,156 @@ class Event
 	}
 	
     /**
+     * Amend single event
+     * 
+     * This endpoint is used to amend a single usage event with a given `event_id`. `event_id` refers to the `idempotency_key` passed in during ingestion. The event will maintain its existing `event_id` after the amendment.
+     * 
+     * This endpoint will mark the existing event as ignored, and Orb will only use the new event passed in the body of this request as the source of truth for that `event_id`. Note that a single event can be amended any number of times, so the same event can be overwritten in subsequent calls to this endpoint, or overwritten using the [Amend customer usage](amend-usage) endpoint. Only a single event with a given `event_id` will be considered the source of truth at any given time.
+     * 
+     * This is a powerful and audit-safe mechanism to retroactively update a single event in cases where you need to:
+     * * update an event with new metadata as you iterate on your pricing model
+     * * update an event based on the result of an external API call (ex. call to a payment gateway succeeded or failed)
+     * 
+     * This amendment API is always audit-safe. The process will still retain the original event, though it will be ignored for billing calculations. For auditing and data fidelity purposes, Orb never overwrites or permanently deletes ingested usage data.
+     * 
+     * ## Request validation
+     * * The `timestamp` of the new event must match the `timestamp` of the existing event already ingested. As with ingestion, all timestamps must be sent in ISO8601 format with UTC timezone offset.
+     * * The `customer_id` or `external_customer_id` of the new event must match the `customer_id` or `external_customer_id` of the existing event already ingested. Exactly one of `customer_id` and `external_customer_id` should be specified, and similar to ingestion, the ID must identify a Customer resource within Orb. Unlike ingestion, for event amendment, we strictly enforce that the Customer must be in the Orb system, even during the initial integration period. We do not allow updating the `Customer` an event is associated with.
+     * * Orb does not accept an `idempotency_key` with the event in this endpoint, since this request is by design idempotent. On retryable errors, you should retry the request and assume the amendment operation has not succeeded until receipt of a 2xx. 
+     * * The event's `timestamp` must fall within the customer's current subscription's billing period, or within the grace period of the customer's current subscription's previous billing period.
+     * 
+     * @param \orb\orb\Models\Operations\AmendEventRequest $request
+     * @return \orb\orb\Models\Operations\AmendEventResponse
+     */
+	public function amend(
+        \orb\orb\Models\Operations\AmendEventRequest $request,
+    ): \orb\orb\Models\Operations\AmendEventResponse
+    {
+        $baseUrl = $this->_serverUrl;
+        $url = Utils\Utils::generateUrl($baseUrl, '/events/{event_id}', \orb\orb\Models\Operations\AmendEventRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
+        $options = array_merge_recursive($options, $body);
+        $options['headers']['Accept'] = 'application/json;q=1, application/json;q=0';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
+        
+        $httpResponse = $this->_securityClient->request('PUT', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\AmendEventResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->amendEvent200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\AmendEvent200ApplicationJSON', 'json');
+            }
+        }
+        else if ($httpResponse->getStatusCode() === 400) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->amendEvent400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\AmendEvent400ApplicationJSON', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * Close a backfill
+     * 
+     * Closing a backfill makes the updated usage visible in Orb. Upon closing a backfill, Orb will asynchronously reflect the updated usage in invoice amounts and usage graphs. Once all of the updates are complete, the backfill's status will transition to `reflected`.
+     * 
+     * 
+     * 
+     * @param \orb\orb\Models\Operations\CloseBackfillRequest $request
+     * @return \orb\orb\Models\Operations\CloseBackfillResponse
+     */
+	public function closeBackfill(
+        \orb\orb\Models\Operations\CloseBackfillRequest $request,
+    ): \orb\orb\Models\Operations\CloseBackfillResponse
+    {
+        $baseUrl = $this->_serverUrl;
+        $url = Utils\Utils::generateUrl($baseUrl, '/events/backfills/{backfill_id}/close', \orb\orb\Models\Operations\CloseBackfillRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
+        
+        $httpResponse = $this->_securityClient->request('POST', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\CloseBackfillResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->backfill = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Backfill', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * Create a backfill
+     * 
+     * Creating the backfill enables adding or replacing past events, even those that are older than the ingestion grace period. Performing a backfill in Orb involves 3 steps:
+     * 
+     * 1. Create the backfill, specifying its parameters.
+     * 2. [Ingest](ingest) usage events, referencing the backfill (query parameter `backfill_id`).
+     * 3. [Close](close-backfill) the backfill, propagating the update in past usage throughout Orb.
+     * 
+     * Changes from a backfill are not reflected until the backfill is closed, so you won’t need to worry about your customers seeing partially updated usage data. Backfills are also reversible, so you’ll be able to revert a backfill if you’ve made a mistake.
+     * 
+     * This endpoint will return a backfill object, which contains an `id`. That `id` can then be used as the `backfill_id` query parameter to the event ingestion endpoint to associate ingested events with this backfill. The effects (e.g. updated usage graphs) of this backfill will not take place until the backfill is closed.
+     * 
+     * If the `replace_existing_events` is `true`, existing events in the backfill's timeframe will be replaced with the newly ingested events associated with the backfill. If `false`, newly ingested events will be added to the existing events.
+     * 
+     * @param \orb\orb\Models\Operations\CreateBackfillRequestBody $request
+     * @return \orb\orb\Models\Operations\CreateBackfillResponse
+     */
+	public function create(
+        \orb\orb\Models\Operations\CreateBackfillRequestBody $request,
+    ): \orb\orb\Models\Operations\CreateBackfillResponse
+    {
+        $baseUrl = $this->_serverUrl;
+        $url = Utils\Utils::generateUrl($baseUrl, '/events/backfills');
+        
+        $options = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, "request", "json");
+        $options = array_merge_recursive($options, $body);
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
+        
+        $httpResponse = $this->_securityClient->request('POST', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\CreateBackfillResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->backfill = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Backfill', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
      * Deprecate single event
      * 
      * This endpoint is used to deprecate a single usage event with a given `event_id`. `event_id` refers to the `idempotency_key` passed in during ingestion. 
@@ -48,7 +198,7 @@ class Event
      * * no longer bill for an event that was improperly reported
      * * no longer bill for an event based on the result of an external API call (ex. call to a payment gateway failed and the user should not be billed)
      * 
-     * If you want to only change specific properties of an event, but keep the event as part of the billing calculation, use the [Amend single event](../reference/Orb-API.json/paths/~1events~1{event_id}/put) endpoint instead.
+     * If you want to only change specific properties of an event, but keep the event as part of the billing calculation, use the [Amend single event](amend-event) endpoint instead.
      * 
      * This API is always audit-safe. The process will still retain the deprecated event, though it will be ignored for billing calculations. For auditing and data fidelity purposes, Orb never overwrites or permanently deletes ingested usage data.
      * 
@@ -57,15 +207,15 @@ class Event
      * * The event's `timestamp` must fall within the customer's current subscription's billing period, or within the grace period of the customer's current subscription's previous billing period. Orb does not allow deprecating events for billing periods that have already invoiced customers.
      * * The `customer_id` or the `external_customer_id` of the original event ingestion request must identify a Customer resource within Orb, even if this event was ingested during the initial integration period. We do not allow deprecating events for customers not in the Orb system.
      * 
-     * @param \orb\orb\Models\Operations\PutDeprecateEventsEventIdRequest $request
-     * @return \orb\orb\Models\Operations\PutDeprecateEventsEventIdResponse
+     * @param \orb\orb\Models\Operations\DeprecateEventRequest $request
+     * @return \orb\orb\Models\Operations\DeprecateEventResponse
      */
-	public function deprecate(
-        \orb\orb\Models\Operations\PutDeprecateEventsEventIdRequest $request,
-    ): \orb\orb\Models\Operations\PutDeprecateEventsEventIdResponse
+	public function deprecateEvent(
+        \orb\orb\Models\Operations\DeprecateEventRequest $request,
+    ): \orb\orb\Models\Operations\DeprecateEventResponse
     {
         $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/events/{event_id}/deprecate', \orb\orb\Models\Operations\PutDeprecateEventsEventIdRequest::class, $request);
+        $url = Utils\Utils::generateUrl($baseUrl, '/events/{event_id}/deprecate', \orb\orb\Models\Operations\DeprecateEventRequest::class, $request);
         
         $options = ['http_errors' => false];
         $options['headers']['Accept'] = 'application/json;q=1, application/json;q=0';
@@ -75,7 +225,7 @@ class Event
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\PutDeprecateEventsEventIdResponse();
+        $response = new \orb\orb\Models\Operations\DeprecateEventResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -83,13 +233,13 @@ class Event
         if ($httpResponse->getStatusCode() === 200) {
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
-                $response->putDeprecateEventsEventId200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PutDeprecateEventsEventId200ApplicationJSON', 'json');
+                $response->deprecateEvent200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\DeprecateEvent200ApplicationJSON', 'json');
             }
         }
         else if ($httpResponse->getStatusCode() === 400) {
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
-                $response->putDeprecateEventsEventId400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PutDeprecateEventsEventId400ApplicationJSON', 'json');
+                $response->deprecateEvent400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\DeprecateEvent400ApplicationJSON', 'json');
             }
         }
 
@@ -237,12 +387,12 @@ class Event
      * }
      * ```
      * 
-     * @param \orb\orb\Models\Operations\PostIngestRequest $request
-     * @return \orb\orb\Models\Operations\PostIngestResponse
+     * @param \orb\orb\Models\Operations\IngestRequest $request
+     * @return \orb\orb\Models\Operations\IngestResponse
      */
 	public function ingest(
-        \orb\orb\Models\Operations\PostIngestRequest $request,
-    ): \orb\orb\Models\Operations\PostIngestResponse
+        \orb\orb\Models\Operations\IngestRequest $request,
+    ): \orb\orb\Models\Operations\IngestResponse
     {
         $baseUrl = $this->_serverUrl;
         $url = Utils\Utils::generateUrl($baseUrl, '/ingest');
@@ -250,7 +400,7 @@ class Event
         $options = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
         $options = array_merge_recursive($options, $body);
-        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\PostIngestRequest::class, $request, null));
+        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\IngestRequest::class, $request, null));
         $options['headers']['Accept'] = 'application/json;q=1, application/json;q=0';
         $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
         
@@ -258,7 +408,7 @@ class Event
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\PostIngestResponse();
+        $response = new \orb\orb\Models\Operations\IngestResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -266,13 +416,91 @@ class Event
         if ($httpResponse->getStatusCode() === 200) {
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
-                $response->postIngest200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PostIngest200ApplicationJSON', 'json');
+                $response->ingest200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\Ingest200ApplicationJSON', 'json');
             }
         }
         else if ($httpResponse->getStatusCode() === 400) {
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
-                $response->postIngest400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PostIngest400ApplicationJSON', 'json');
+                $response->ingest400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\Ingest400ApplicationJSON', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * List backfills
+     * 
+     * This endpoint returns a list of all [backfills](../reference/Orb-API.json/components/schemas/Backfill) in a list format. 
+     * 
+     * The list of backfills is ordered starting from the most recently created backfill. The response also includes [`pagination_metadata`](../api/pagination), which lets the caller retrieve the next page of results if they exist. More information about pagination can be found in the [Pagination-metadata schema](../reference/Orb-API.json/components/schemas/Pagination-metadata).
+     * 
+     * @return \orb\orb\Models\Operations\ListBackfillsResponse
+     */
+	public function listBackfills(
+    ): \orb\orb\Models\Operations\ListBackfillsResponse
+    {
+        $baseUrl = $this->_serverUrl;
+        $url = Utils\Utils::generateUrl($baseUrl, '/events/backfills');
+        
+        $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
+        
+        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\ListBackfillsResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->listBackfills200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\ListBackfills200ApplicationJSON', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * Revert a backfill
+     * 
+     * Reverting a backfill undoes all the effects of closing the backfill. If the backfill is reflected, the status will transition to `pending_revert` while the effects of the backfill are undone. Once all effects are undone, the backfill will transition to `reverted`.
+     * 
+     * If a backfill is reverted before its closed, no usage will be updated as a result of the backfill and it will immediately transition to `reverted`.
+     * 
+     * @param \orb\orb\Models\Operations\RevertBackfillRequest $request
+     * @return \orb\orb\Models\Operations\RevertBackfillResponse
+     */
+	public function revertBackfill(
+        \orb\orb\Models\Operations\RevertBackfillRequest $request,
+    ): \orb\orb\Models\Operations\RevertBackfillResponse
+    {
+        $baseUrl = $this->_serverUrl;
+        $url = Utils\Utils::generateUrl($baseUrl, '/events/backfills/{backfill_id}/revert', \orb\orb\Models\Operations\RevertBackfillRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
+        
+        $httpResponse = $this->_securityClient->request('POST', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\RevertBackfillResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->backfill = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Backfill', 'json');
             }
         }
 
@@ -282,24 +510,24 @@ class Event
     /**
      * Search events
      * 
-     * This endpoint returns a filtered set of events for an account in a paginated list format. 
+     * This endpoint returns a filtered set of events for an account in a [paginated list format](../api/pagination). 
      * 
      * Note that this is a `POST` endpoint rather than a `GET` endpoint because it employs a JSON body for search criteria rather than query parameters, allowing for a more flexible search syntax.
      * 
      * Note that a search criteria _must_ be specified. Currently, Orb supports the following criteria:
      * - `event_ids`: This is an explicit array of IDs to filter by. Note that an event's ID is the `idempotency_key` that was originally used for ingestion.
-     * - `invoice_id`: This is an issued Orb invoice ID (see also [List Invoices](../reference/Orb-API.json/paths/~1invoices/get)). Orb will fetch all events that were used to calculate the invoice. In the common case, this will be a list of events whose `timestamp` property falls within the billing period specified by the invoice.
+     * - `invoice_id`: This is an issued Orb invoice ID (see also [List Invoices](list-invoices)). Orb will fetch all events that were used to calculate the invoice. In the common case, this will be a list of events whose `timestamp` property falls within the billing period specified by the invoice.
      * 
      * By default, Orb does not return _deprecated_ events in this endpoint.
      * 
      * By default, Orb will not throw a `404` if no events matched, Orb will return an empty array for `data` instead.
      * 
-     * @param \orb\orb\Models\Operations\PostEventsSearchRequestBody $request
-     * @return \orb\orb\Models\Operations\PostEventsSearchResponse
+     * @param \orb\orb\Models\Operations\SearchEventsRequestBody $request
+     * @return \orb\orb\Models\Operations\SearchEventsResponse
      */
 	public function search(
-        \orb\orb\Models\Operations\PostEventsSearchRequestBody $request,
-    ): \orb\orb\Models\Operations\PostEventsSearchResponse
+        \orb\orb\Models\Operations\SearchEventsRequestBody $request,
+    ): \orb\orb\Models\Operations\SearchEventsResponse
     {
         $baseUrl = $this->_serverUrl;
         $url = Utils\Utils::generateUrl($baseUrl, '/events/search');
@@ -314,7 +542,7 @@ class Event
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\PostEventsSearchResponse();
+        $response = new \orb\orb\Models\Operations\SearchEventsResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -322,67 +550,7 @@ class Event
         if ($httpResponse->getStatusCode() === 200) {
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
-                $response->postEventsSearch200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PostEventsSearch200ApplicationJSON', 'json');
-            }
-        }
-
-        return $response;
-    }
-	
-    /**
-     * Amend single event
-     * 
-     * This endpoint is used to amend a single usage event with a given `event_id`. `event_id` refers to the `idempotency_key` passed in during ingestion. The event will maintain its existing `event_id` after the amendment.
-     * 
-     * This endpoint will mark the existing event as ignored, and Orb will only use the new event passed in the body of this request as the source of truth for that `event_id`. Note that a single event can be amended any number of times, so the same event can be overwritten in subsequent calls to this endpoint, or overwritten using the [Amend customer usage](../reference/Orb-API.json/paths/~1customers~1{customer_id}~1usage/patch) endpoint. Only a single event with a given `event_id` will be considered the source of truth at any given time.
-     * 
-     * This is a powerful and audit-safe mechanism to retroactively update a single event in cases where you need to:
-     * * update an event with new metadata as you iterate on your pricing model
-     * * update an event based on the result of an external API call (ex. call to a payment gateway succeeded or failed)
-     * 
-     * This amendment API is always audit-safe. The process will still retain the original event, though it will be ignored for billing calculations. For auditing and data fidelity purposes, Orb never overwrites or permanently deletes ingested usage data.
-     * 
-     * ## Request validation
-     * * The `timestamp` of the new event must match the `timestamp` of the existing event already ingested. As with ingestion, all timestamps must be sent in ISO8601 format with UTC timezone offset.
-     * * The `customer_id` or `external_customer_id` of the new event must match the `customer_id` or `external_customer_id` of the existing event already ingested. Exactly one of `customer_id` and `external_customer_id` should be specified, and similar to ingestion, the ID must identify a Customer resource within Orb. Unlike ingestion, for event amendment, we strictly enforce that the Customer must be in the Orb system, even during the initial integration period. We do not allow updating the `Customer` an event is associated with.
-     * * Orb does not accept an `idempotency_key` with the event in this endpoint, since this request is by design idempotent. On retryable errors, you should retry the request and assume the amendment operation has not succeeded until receipt of a 2xx. 
-     * * The event's `timestamp` must fall within the customer's current subscription's billing period, or within the grace period of the customer's current subscription's previous billing period.
-     * 
-     * @param \orb\orb\Models\Operations\PutEventsEventIdRequest $request
-     * @return \orb\orb\Models\Operations\PutEventsEventIdResponse
-     */
-	public function update(
-        \orb\orb\Models\Operations\PutEventsEventIdRequest $request,
-    ): \orb\orb\Models\Operations\PutEventsEventIdResponse
-    {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/events/{event_id}', \orb\orb\Models\Operations\PutEventsEventIdRequest::class, $request);
-        
-        $options = ['http_errors' => false];
-        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
-        $options = array_merge_recursive($options, $body);
-        $options['headers']['Accept'] = 'application/json;q=1, application/json;q=0';
-        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s', $this->_language, $this->_sdkVersion, $this->_genVersion);
-        
-        $httpResponse = $this->_securityClient->request('PUT', $url, $options);
-        
-        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
-
-        $response = new \orb\orb\Models\Operations\PutEventsEventIdResponse();
-        $response->statusCode = $httpResponse->getStatusCode();
-        $response->contentType = $contentType;
-        $response->rawResponse = $httpResponse;
-        
-        if ($httpResponse->getStatusCode() === 200) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $serializer = Utils\JSON::createSerializer();
-                $response->putEventsEventId200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PutEventsEventId200ApplicationJSON', 'json');
-            }
-        }
-        else if ($httpResponse->getStatusCode() === 400) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $serializer = Utils\JSON::createSerializer();
-                $response->putEventsEventId400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PutEventsEventId400ApplicationJSON', 'json');
+                $response->searchEvents200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\SearchEvents200ApplicationJSON', 'json');
             }
         }
 

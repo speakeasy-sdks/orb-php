@@ -12,10 +12,10 @@ use \orb\orb\Utils\SpeakeasyMetadata;
 class Security
 {
 	#[SpeakeasyMetadata('security:scheme=true,type=http,subtype=bearer,name=Authorization')]
-    public string $bearerAuth;
+    public string $apiKeyAuth;
     
 	public function __construct()
 	{
-		$this->bearerAuth = "";
+		$this->apiKeyAuth = "";
 	}
 }

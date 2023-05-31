@@ -20,10 +20,19 @@ class ListPlansResponse
 	
     public ?\Psr\Http\Message\ResponseInterface $rawResponse = null;
     
+    /**
+     * OK
+     * 
+     * @var ?\orb\orb\Models\Operations\ListPlans200ApplicationJSON $listPlans200ApplicationJSONObject
+     */
+	
+    public ?ListPlans200ApplicationJSON $listPlans200ApplicationJSONObject = null;
+    
 	public function __construct()
 	{
 		$this->contentType = "";
 		$this->statusCode = 0;
 		$this->rawResponse = null;
+		$this->listPlans200ApplicationJSONObject = null;
 	}
 }

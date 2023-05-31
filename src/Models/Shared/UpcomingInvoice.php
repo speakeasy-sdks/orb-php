@@ -49,6 +49,19 @@ class UpcomingInvoice
     #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\UpcomingInvoiceCustomer')]
     public UpcomingInvoiceCustomer $customer;
     
+	#[\JMS\Serializer\Annotation\SerializedName('discount')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\Discount')]
+    public Discount $discount;
+    
+    /**
+     * A URL for the invoice portal.
+     * 
+     * @var string $hostedInvoiceUrl
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('hosted_invoice_url')]
+    #[\JMS\Serializer\Annotation\Type('string')]
+    public string $hostedInvoiceUrl;
+    
     /**
      * The breakdown of prices in this invoice.
      * 
@@ -57,6 +70,10 @@ class UpcomingInvoice
 	#[\JMS\Serializer\Annotation\SerializedName('line_items')]
     #[\JMS\Serializer\Annotation\Type('array<orb\orb\Models\Shared\UpcomingInvoiceLineItems>')]
     public array $lineItems;
+    
+	#[\JMS\Serializer\Annotation\SerializedName('minimum')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\MinimumAmount')]
+    public MinimumAmount $minimum;
     
     /**
      * The associated subscription for this invoice.
@@ -90,7 +107,10 @@ class UpcomingInvoice
 		$this->amountDue = "";
 		$this->currency = "";
 		$this->customer = new \orb\orb\Models\Shared\UpcomingInvoiceCustomer();
+		$this->discount = new \orb\orb\Models\Shared\Discount();
+		$this->hostedInvoiceUrl = "";
 		$this->lineItems = [];
+		$this->minimum = new \orb\orb\Models\Shared\MinimumAmount();
 		$this->subscription = new \orb\orb\Models\Shared\UpcomingInvoiceSubscription();
 		$this->subtotal = "";
 		$this->targetDate = new \DateTime();

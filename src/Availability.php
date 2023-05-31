@@ -44,10 +44,10 @@ class Availability
      * 
      * This API does not have any side-effects or return any Orb resources.
      * 
-     * @return \orb\orb\Models\Operations\GetPingResponse
+     * @return \orb\orb\Models\Operations\PingResponse
      */
 	public function ping(
-    ): \orb\orb\Models\Operations\GetPingResponse
+    ): \orb\orb\Models\Operations\PingResponse
     {
         $baseUrl = $this->_serverUrl;
         $url = Utils\Utils::generateUrl($baseUrl, '/ping');
@@ -60,7 +60,7 @@ class Availability
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\GetPingResponse();
+        $response = new \orb\orb\Models\Operations\PingResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -68,7 +68,7 @@ class Availability
         if ($httpResponse->getStatusCode() === 200) {
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
-                $response->getPing200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\GetPing200ApplicationJSON', 'json');
+                $response->ping200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\Ping200ApplicationJSON', 'json');
             }
         }
 

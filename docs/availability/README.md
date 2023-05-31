@@ -2,7 +2,7 @@
 
 ## Overview
 
-Actions related to API availability.
+The Availability resource represents a customer's availability. Availability is created when a customer's invoice is paid, and is updated when a customer's transaction is refunded.
 
 ### Available Operations
 
@@ -31,7 +31,7 @@ $sdk = SDK::builder()
 try {
     $response = $sdk->availability->ping();
 
-    if ($response->getPing200ApplicationJSONObject !== null) {
+    if ($response->ping200ApplicationJSONObject !== null) {
         // handle response
     }
 } catch (Exception $e) {

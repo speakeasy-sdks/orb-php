@@ -2,30 +2,80 @@
 
 ## Overview
 
-Actions related to customer management.
+The Customer resource represents a customer of your service. Customers are created when a customer is created in your service, and are updated when a customer's information is updated in your service.
 
 ### Available Operations
 
+* [amend](#amend) - Amend customer usage
+* [amendByExternalId](#amendbyexternalid) - Amend customer usage by external ID
 * [create](#create) - Create customer
-* [get](#get) - Retrieve a customer
-* [getBalance](#getbalance) - Get customer balance transactions
-* [getByExternalId](#getbyexternalid) - Retrieve a customer by external ID
-* [getCosts](#getcosts) - View customer costs
-* [getCostsByExternalId](#getcostsbyexternalid) - View customer costs by external customer ID
+* [createTransaction](#createtransaction) - Create a customer balance transaction
+* [delete](#delete) - Delete a customer
+* [fetch](#fetch) - Retrieve a customer
+* [fetchByExternalId](#fetchbyexternalid) - Retrieve a customer by external ID
+* [fetchCosts](#fetchcosts) - View customer costs
+* [fetchCostsByExternalId](#fetchcostsbyexternalid) - View customer costs by external customer ID
+* [fetchTransactions](#fetchtransactions) - Get customer balance transactions
 * [list](#list) - List customers
-* [update](#update) - Update customer
 * [updateByExternalId](#updatebyexternalid) - Update a customer by external ID
-* [updateUsage](#updateusage) - Amend customer usage
-* [updateUsageByExternalId](#updateusagebyexternalid) - Amend customer usage by external ID
+* [updateCustomer](#updatecustomer) - Update customer
 
-## create
+## amend
 
-This operation is used to create an Orb customer, who is party to the core billing relationship. See [Customer](../reference/Orb-API.json/components/schemas/Customer) for an overview of the customer resource.
+This endpoint is used to amend usage within a timeframe for a customer that has an active subscription.
 
-This endpoint is critical in the following Orb functionality:
-* Automated charges can be configured by setting `payment_provider` and `payment_provider_id` to automatically issue invoices
-* [Customer ID Aliases](../docs/Customer-ID-Aliases.md) can be configured by setting `external_customer_id`
-* [Timezone localization](../docs/Timezone-localization.md) can be configured on a per-customer basis by setting the `timezone` parameter
+This endpoint will mark _all_ existing events within `[timeframe_start, timeframe_end)` as _ignored_  for billing  purposes, and Orb will only use the _new_ events passed in the body of this request as the source of truth for that timeframe moving forwards. Note that a given time period can be amended any number of times, so events can be overwritten in subsequent calls to this endpoint.
+
+This is a powerful and audit-safe mechanism to retroactively change usage data in cases where you need to:
+- decrease historical usage consumption because of degraded service availability in your systems
+- account for gaps from your usage reporting mechanism
+- make point-in-time fixes for specific event records, while retaining the original time of usage and associated metadata
+
+This amendment API is designed with two explicit goals:
+1. Amendments are **always audit-safe**. The amendment process will still retain original events in the timeframe, though they will be ignored for billing calculations. For auditing and data fidelity purposes, Orb never overwrites or permanently deletes ingested usage data.
+2. Amendments always preserve data **consistency**. In other words, either an amendment is fully processed by the system (and the new events for the timeframe are honored rather than the existing ones) or the amendment request fails. To maintain this important property, Orb prevents _partial event ingestion_ on this endpoint.
+
+
+## Response semantics
+ - Either all events are ingested successfully, or all fail to ingest (returning a `4xx` or `5xx` response code).
+- Any event that fails schema validation will lead to a `4xx` response. In this case, to maintain data consistency, Orb will not ingest any events and will also not deprecate existing events in the time period.
+- You can assume that the amendment is successful on receipt of a `2xx` response.While a successful response from this endpoint indicates that the new events have been ingested, updating usage totals happens asynchronously and may be delayed by a few minutes. 
+
+As emphasized above, Orb will never show an inconsistent state (e.g. in invoice previews or dashboards); either it will show the existing state (before the amendment) or the new state (with new events in the requested timeframe).
+
+
+## Sample request body
+
+```json
+{
+	"events": [{
+		"event_name": "payment_processed",
+		"timestamp": "2022-03-24T07:15:00Z",
+		"properties": {
+			"amount": 100
+		}
+	}, {
+		"event_name": "payment_failed",
+		"timestamp": "2022-03-24T07:15:00Z",
+		"properties": {
+			"amount": 100
+		}
+	}]
+}
+```
+
+## Request Validation
+- The `timestamp` of each event reported must fall within the bounds of `timeframe_start` and `timeframe_end`. As with ingestion, all timestamps must be sent in ISO8601 format with UTC timezone offset.
+
+- Orb **does not accept an `idempotency_key`** with each event in this endpoint, since the entirety of the event list must be ingested to ensure consistency. On retryable errors, you should retry the request in its entirety, and assume that the amendment operation has not succeeded until receipt of a `2xx`.
+
+- Both `timeframe_start` and `timeframe_end` must be timestamps in the past. Furthermore, Orb will generally validate that the `timeframe_start` and `timeframe_end` fall within the customer's _current_ subscription billing period. However, Orb does allow amendments while in the grace period of the previous billing period; in this instance, the timeframe can start before the current period.
+
+
+## API Limits
+Note that Orb does not currently enforce a hard rate-limit for API usage or a maximum request payload size. Similar to the event ingestion API, this API is architected for high-throughput ingestion. It is also safe to _programmatically_ call this endpoint if your system can automatically detect a need for historical amendment.
+
+In order to overwrite timeframes with a very large number of events, we suggest using multiple calls with small adjacent (e.g. every hour) timeframes.
 
 ### Example Usage
 
@@ -37,36 +87,137 @@ require_once 'vendor/autoload.php';
 
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\PostCustomersRequestBody;
-use \orb\orb\Models\Operations\PostCustomersRequestBodyBillingAddress;
-use \orb\orb\Models\Operations\PostCustomersRequestBodyPaymentProvider;
-use \orb\orb\Models\Operations\PostCustomersRequestBodyShippingAddress;
+use \orb\orb\Models\Operations\AmendUsageRequest;
+use \orb\orb\Models\Operations\AmendUsageRequestBody;
+use \orb\orb\Models\Operations\AmendUsageRequestBodyEvents;
 
 $sdk = SDK::builder()
     ->build();
 
 try {
-    $request = new PostCustomersRequestBody();
-    $request->billingAddress = new PostCustomersRequestBodyBillingAddress();
-    $request->billingAddress->city = 'East Ona';
+    $request = new AmendUsageRequest();
+    $request->requestBody = new AmendUsageRequestBody();
+    $request->requestBody->events = [
+        new AmendUsageRequestBodyEvents(),
+    ];
+    $request->customerId = 'ipsa';
+    $request->timeframeEnd = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-05-11T17:46:20Z');
+    $request->timeframeStart = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-05-11T17:46:20Z');
+
+    $response = $sdk->customer->amend($request);
+
+    if ($response->amendUsage200ApplicationJSONObject !== null) {
+        // handle response
+    }
+} catch (Exception $e) {
+    // handle exception
+}
+```
+
+## amendByExternalId
+
+This endpoint's resource and semantics exactly mirror [Amend customer usage](amend-usage) but operates on an [external customer ID](../guides/events-and-metrics/customer-aliases) rather than an Orb issued identifier.
+
+### Example Usage
+
+```php
+<?php
+
+declare(strict_types=1);
+require_once 'vendor/autoload.php';
+
+use \orb\orb\SDK;
+use \orb\orb\Models\Shared\Security;
+use \orb\orb\Models\Operations\AmendUsageExternalCustomerIdRequest;
+use \orb\orb\Models\Operations\AmendUsageExternalCustomerIdRequestBody;
+use \orb\orb\Models\Operations\AmendUsageExternalCustomerIdRequestBodyEvents;
+
+$sdk = SDK::builder()
+    ->build();
+
+try {
+    $request = new AmendUsageExternalCustomerIdRequest();
+    $request->requestBody = new AmendUsageExternalCustomerIdRequestBody();
+    $request->requestBody->events = [
+        new AmendUsageExternalCustomerIdRequestBodyEvents(),
+        new AmendUsageExternalCustomerIdRequestBodyEvents(),
+        new AmendUsageExternalCustomerIdRequestBodyEvents(),
+        new AmendUsageExternalCustomerIdRequestBodyEvents(),
+    ];
+    $request->externalCustomerId = 'est';
+    $request->timeframeEnd = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-05-11T17:46:20Z');
+    $request->timeframeStart = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-05-11T17:46:20Z');
+
+    $response = $sdk->customer->amendByExternalId($request);
+
+    if ($response->amendUsageExternalCustomerId200ApplicationJSONObject !== null) {
+        // handle response
+    }
+} catch (Exception $e) {
+    // handle exception
+}
+```
+
+## create
+
+This operation is used to create an Orb customer, who is party to the core billing relationship. See [Customer](../reference/Orb-API.json/components/schemas/Customer) for an overview of the customer resource.
+
+This endpoint is critical in the following Orb functionality:
+* Automated charges can be configured by setting `payment_provider` and `payment_provider_id` to automatically issue invoices
+* [Customer ID Aliases](../guides/events-and-metrics/customer-aliases) can be configured by setting `external_customer_id`
+* [Timezone localization](../guides/product-catalog/timezones) can be configured on a per-customer basis by setting the `timezone` parameter
+
+### Example Usage
+
+```php
+<?php
+
+declare(strict_types=1);
+require_once 'vendor/autoload.php';
+
+use \orb\orb\SDK;
+use \orb\orb\Models\Shared\Security;
+use \orb\orb\Models\Operations\CreateCustomerRequestBody;
+use \orb\orb\Models\Shared\BillingAddress;
+use \orb\orb\Models\Operations\CreateCustomerRequestBodyPaymentProvider;
+use \orb\orb\Models\Shared\ShippingAddress;
+use \orb\orb\Models\Shared\CustomerTaxId;
+
+$sdk = SDK::builder()
+    ->build();
+
+try {
+    $request = new CreateCustomerRequestBody();
+    $request->autoCollection = false;
+    $request->billingAddress = new BillingAddress();
+    $request->billingAddress->city = 'Osinskiville';
     $request->billingAddress->country = 'US';
-    $request->billingAddress->line1 = 'cum';
-    $request->billingAddress->line2 = 'esse';
-    $request->billingAddress->postalCode = '51036';
-    $request->billingAddress->state = 'sed';
-    $request->currency = 'iste';
-    $request->email = 'Lexie_Howe68@gmail.com';
-    $request->externalCustomerId = 'in';
-    $request->name = 'Sheryl Kertzmann';
-    $request->paymentProvider = PostCustomersRequestBodyPaymentProvider::QUICKBOOKS;
-    $request->paymentProviderId = 'ipsa';
-    $request->shippingAddress = new PostCustomersRequestBodyShippingAddress();
-    $request->shippingAddress->city = 'Parma';
+    $request->billingAddress->line1 = 'dolorem';
+    $request->billingAddress->line2 = 'corporis';
+    $request->billingAddress->postalCode = '73633';
+    $request->billingAddress->state = 'excepturi';
+    $request->currency = 'accusantium';
+    $request->email = 'Lorenza.Yundt65@yahoo.com';
+    $request->externalCustomerId = 'dolorem';
+    $request->metadata = [
+        'consequuntur' => 'repellat',
+        'mollitia' => 'occaecati',
+        'numquam' => 'commodi',
+    ];
+    $request->name = 'Nellie Frami';
+    $request->paymentProvider = CreateCustomerRequestBodyPaymentProvider::BILL_COM;
+    $request->paymentProviderId = 'vitae';
+    $request->shippingAddress = new ShippingAddress();
+    $request->shippingAddress->city = 'O'Konborough';
     $request->shippingAddress->country = 'US';
-    $request->shippingAddress->line1 = 'mollitia';
-    $request->shippingAddress->line2 = 'laborum';
-    $request->shippingAddress->postalCode = '23173';
-    $request->shippingAddress->state = 'omnis';
+    $request->shippingAddress->line1 = 'odit';
+    $request->shippingAddress->line2 = 'quo';
+    $request->shippingAddress->postalCode = '93680';
+    $request->shippingAddress->state = 'quasi';
+    $request->taxId = new CustomerTaxId();
+    $request->taxId->country = 'Nepal';
+    $request->taxId->type = 'temporibus';
+    $request->taxId->value = 'laborum';
     $request->timezone = 'Etc/UTC';
 
     $response = $sdk->customer->create($request);
@@ -79,12 +230,87 @@ try {
 }
 ```
 
-## get
+## createTransaction
 
-This endpoint is used to fetch customer details given an identifier.
+Creates an immutable balance transaction that updates the customer's balance and returns back the newly created [transaction](../reference/Orb-API.json/components/schemas/Customer-balance-transaction).
+
+### Example Usage
+
+```php
+<?php
+
+declare(strict_types=1);
+require_once 'vendor/autoload.php';
+
+use \orb\orb\SDK;
+use \orb\orb\Models\Shared\Security;
+use \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsRequest;
+use \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsRequestBody;
+use \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsRequestBodyType;
+
+$sdk = SDK::builder()
+    ->build();
+
+try {
+    $request = new PostCustomersCustomerIdBalanceTransactionsRequest();
+    $request->requestBody = new PostCustomersCustomerIdBalanceTransactionsRequestBody();
+    $request->requestBody->amount = '1.00';
+    $request->requestBody->description = 'quasi';
+    $request->requestBody->type = PostCustomersCustomerIdBalanceTransactionsRequestBodyType::DECREMENT;
+    $request->customerId = 'voluptatibus';
+
+    $response = $sdk->customer->createTransaction($request);
+
+    if ($response->customerBalanceTransaction !== null) {
+        // handle response
+    }
+} catch (Exception $e) {
+    // handle exception
+}
+```
+
+## delete
+
+This performs a deletion of this customer, its subscriptions, and its invoices. This operation is irreversible. Note that this is a _soft_ deletion, but the data will be inaccessible through the API and Orb dashboard. For hard-deletion, please reach out to the Orb team directly.
+
+**Note**: This operation happens asynchronously and can be expected to take a few minutes to propagate to related resources. However, querying for the customer on subsequent GET requests while deletion is in process will reflect its deletion with a `deleted: true` property. Once the customer deletion has been fully processed, the customer will not be returned in the API.
+
+### Example Usage
+
+```php
+<?php
+
+declare(strict_types=1);
+require_once 'vendor/autoload.php';
+
+use \orb\orb\SDK;
+use \orb\orb\Models\Shared\Security;
+use \orb\orb\Models\Operations\DeleteCustomerRequest;
+
+$sdk = SDK::builder()
+    ->build();
+
+try {
+    $request = new DeleteCustomerRequest();
+    $request->customerId = 'vero';
+
+    $response = $sdk->customer->delete($request);
+
+    if ($response->statusCode === 200) {
+        // handle response
+    }
+} catch (Exception $e) {
+    // handle exception
+}
+```
+
+## fetch
+
+This endpoint is used to fetch customer details given an identifier. If the `Customer` is in the process of being deleted, only the properties `id` and `deleted: true` will be returned.
 
 See the [Customer resource](Orb-API.json/components/schemas/Customer) for a full discussion of the Customer model.
 
+
 ### Example Usage
 
 ```php
@@ -95,16 +321,16 @@ require_once 'vendor/autoload.php';
 
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\GetCustomersCustomerIdRequest;
+use \orb\orb\Models\Operations\FetchCustomerRequest;
 
 $sdk = SDK::builder()
     ->build();
 
 try {
-    $request = new GetCustomersCustomerIdRequest();
-    $request->customerId = 'nemo';
+    $request = new FetchCustomerRequest();
+    $request->customerId = 'nihil';
 
-    $response = $sdk->customer->get($request);
+    $response = $sdk->customer->fetch($request);
 
     if ($response->customer !== null) {
         // handle response
@@ -114,21 +340,11 @@ try {
 }
 ```
 
-## getBalance
+## fetchByExternalId
 
-# The customer balance
+This endpoint is used to fetch customer details given an `external_customer_id` (see [Customer ID Aliases](../guides/events-and-metrics/customer-aliases)).
 
-The customer balance is an amount in the customer's currency, which Orb automatically applies to subsequent invoices. This balance can be adjusted manually via Orb's webapp on the customer details page. You can use this balance to provide a fixed mid-period credit to the customer. Commonly, this is done due to system downtime/SLA violation, or an adhoc adjustment discussed with the customer.
-
-If the balance is a positive value at the time of invoicing, it represents that the customer has credit that should be used to offset the amount due on the next issued invoice. In this case, Orb will automatically reduce the next invoice by the balance amount, and roll over any remaining balance if the invoice is fully discounted.
-
-If the balance is a negative value at the time of invoicing, Orb will increase the invoice's amount due with a positive adjustment, and reset the balance to 0.
-
-This endpoint retrieves all customer balance transactions in reverse chronological order for a single customer, providing a complete audit trail of all adjustments and invoice applications.
-
-## Eligibility
-
-The customer balance can only be applied to invoices or adjusted manually if invoices are not synced to a separate invoicing provider. If a payment gateway such as Stripe is used, the balance will be applied to the invoice before forwarding payment to the gateway.
+Note that the resource and semantics of this endpoint exactly mirror [Get Customer](fetch-customer).
 
 ### Example Usage
 
@@ -140,51 +356,16 @@ require_once 'vendor/autoload.php';
 
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsRequest;
+use \orb\orb\Models\Operations\FetchCustomerExternalIdRequest;
 
 $sdk = SDK::builder()
     ->build();
 
 try {
-    $request = new GetCustomersCustomerIdBalanceTransactionsRequest();
-    $request->customerId = 'minima';
+    $request = new FetchCustomerExternalIdRequest();
+    $request->externalCustomerId = 'praesentium';
 
-    $response = $sdk->customer->getBalance($request);
-
-    if ($response->getCustomersCustomerIdBalanceTransactions200ApplicationJSONObject !== null) {
-        // handle response
-    }
-} catch (Exception $e) {
-    // handle exception
-}
-```
-
-## getByExternalId
-
-This endpoint is used to fetch customer details given an `external_customer_id` (see [Customer ID Aliases](../docs/Customer-ID-Aliases.md)).
-
-Note that the resource and semantics of this endpoint exactly mirror [Get Customer](Orb-API.json/paths/~1customers/get).
-
-### Example Usage
-
-```php
-<?php
-
-declare(strict_types=1);
-require_once 'vendor/autoload.php';
-
-use \orb\orb\SDK;
-use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdRequest;
-
-$sdk = SDK::builder()
-    ->build();
-
-try {
-    $request = new GetCustomersExternalCustomerIdExternalCustomerIdRequest();
-    $request->externalCustomerId = 'excepturi';
-
-    $response = $sdk->customer->getByExternalId($request);
+    $response = $sdk->customer->fetchByExternalId($request);
 
     if ($response->customer !== null) {
         // handle response
@@ -194,14 +375,14 @@ try {
 }
 ```
 
-## getCosts
+## fetchCosts
 
-This endpoint is used to fetch a day-by-day snapshot of a customer's costs in Orb, calculated by applying pricing information to the underlying usage (see the [subscription usage endpoint](../reference/Orb-API.json/paths/~1subscriptions~1{subscription_id}~1usage/get) to fetch usage per metric, in usage units rather than a currency). 
+This endpoint is used to fetch a day-by-day snapshot of a customer's costs in Orb, calculated by applying pricing information to the underlying usage (see the [subscription usage endpoint](gcription-usage) to fetch usage per metric, in usage units rather than a currency). 
 
 This endpoint can be leveraged for internal tooling and to provide a more transparent billing experience for your end users:
 
 1. Understand the cost breakdown per line item historically and in real-time for the current billing period. 
-2. Provide customer visibility into how different services are contributing to the overall invoice with a per-day timeseries (as compared to the [upcoming invoice](../reference/Orb-API.json/paths/~1invoices~1upcoming/get) resource, which represents a snapshot for the current period).
+2. Provide customer visibility into how different services are contributing to the overall invoice with a per-day timeseries (as compared to the [upcoming invoice](fetch-upcoming-invoice) resource, which represents a snapshot for the current period).
 3. Assess how minimums and discounts affect your customers by teasing apart costs directly as a result of usage, as opposed to minimums and discounts at the plan and price level.
 4. Gain insight into key customer health metrics, such as the percent utilization of the minimum committed spend.
 
@@ -274,23 +455,23 @@ require_once 'vendor/autoload.php';
 
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\GetCustomerCostsRequest;
-use \orb\orb\Models\Operations\GetCustomerCostsViewMode;
+use \orb\orb\Models\Operations\FetchCustomerCostsRequest;
+use \orb\orb\Models\Operations\FetchCustomerCostsViewMode;
 
 $sdk = SDK::builder()
     ->build();
 
 try {
-    $request = new GetCustomerCostsRequest();
-    $request->customerId = 'accusantium';
-    $request->groupBy = 'iure';
+    $request = new FetchCustomerCostsRequest();
+    $request->customerId = 'voluptatibus';
+    $request->groupBy = 'ipsa';
     $request->timeframeEnd = '2022-03-01T05:00:00Z';
     $request->timeframeStart = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-02-01T05:00:00Z');
-    $request->viewMode = GetCustomerCostsViewMode::CUMULATIVE;
+    $request->viewMode = FetchCustomerCostsViewMode::CUMULATIVE;
 
-    $response = $sdk->customer->getCosts($request);
+    $response = $sdk->customer->fetchCosts($request);
 
-    if ($response->getCustomerCosts200ApplicationJSONObject !== null) {
+    if ($response->fetchCustomerCosts200ApplicationJSONObject !== null) {
         // handle response
     }
 } catch (Exception $e) {
@@ -298,9 +479,9 @@ try {
 }
 ```
 
-## getCostsByExternalId
+## fetchCostsByExternalId
 
-This endpoint's resource and semantics exactly mirror [View customer costs](../reference/Orb-API.json/paths/~1customers~1{customer_id}~1costs/get) but operates on an [external customer ID](../docs/Customer-ID-Aliases.md) rather than an Orb issued identifier.
+This endpoint's resource and semantics exactly mirror [View customer costs](fetch-customer-costs) but operates on an [external customer ID](../guides/events-and-metrics/customer-aliases) rather than an Orb issued identifier.
 
 ### Example Usage
 
@@ -312,23 +493,68 @@ require_once 'vendor/autoload.php';
 
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\GetExternalCustomerCostsRequest;
-use \orb\orb\Models\Operations\GetExternalCustomerCostsViewMode;
+use \orb\orb\Models\Operations\FetchCustomerCostsExternalIdRequest;
+use \orb\orb\Models\Operations\FetchCustomerCostsExternalIdViewMode;
 
 $sdk = SDK::builder()
     ->build();
 
 try {
-    $request = new GetExternalCustomerCostsRequest();
-    $request->externalCustomerId = 'doloribus';
-    $request->groupBy = 'sapiente';
+    $request = new FetchCustomerCostsExternalIdRequest();
+    $request->externalCustomerId = 'voluptate';
+    $request->groupBy = 'cum';
     $request->timeframeEnd = '2022-03-01T05:00:00Z';
     $request->timeframeStart = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-02-01T05:00:00Z');
-    $request->viewMode = GetExternalCustomerCostsViewMode::PERIODIC;
+    $request->viewMode = FetchCustomerCostsExternalIdViewMode::PERIODIC;
 
-    $response = $sdk->customer->getCostsByExternalId($request);
+    $response = $sdk->customer->fetchCostsByExternalId($request);
 
-    if ($response->getExternalCustomerCosts200ApplicationJSONObject !== null) {
+    if ($response->fetchCustomerCostsExternalId200ApplicationJSONObject !== null) {
+        // handle response
+    }
+} catch (Exception $e) {
+    // handle exception
+}
+```
+
+## fetchTransactions
+
+# The customer balance
+
+The customer balance is an amount in the customer's currency, which Orb automatically applies to subsequent invoices. This balance can be adjusted manually via Orb's webapp on the customer details page. You can use this balance to provide a fixed mid-period credit to the customer. Commonly, this is done due to system downtime/SLA violation, or an adhoc adjustment discussed with the customer.
+
+If the balance is a positive value at the time of invoicing, it represents that the customer has credit that should be used to offset the amount due on the next issued invoice. In this case, Orb will automatically reduce the next invoice by the balance amount, and roll over any remaining balance if the invoice is fully discounted.
+
+If the balance is a negative value at the time of invoicing, Orb will increase the invoice's amount due with a positive adjustment, and reset the balance to 0.
+
+This endpoint retrieves all customer balance transactions in reverse chronological order for a single customer, providing a complete audit trail of all adjustments and invoice applications.
+
+## Eligibility
+
+The customer balance can only be applied to invoices or adjusted manually if invoices are not synced to a separate invoicing provider. If a payment gateway such as Stripe is used, the balance will be applied to the invoice before forwarding payment to the gateway.
+
+### Example Usage
+
+```php
+<?php
+
+declare(strict_types=1);
+require_once 'vendor/autoload.php';
+
+use \orb\orb\SDK;
+use \orb\orb\Models\Shared\Security;
+use \orb\orb\Models\Operations\ListBalanceTransactionsRequest;
+
+$sdk = SDK::builder()
+    ->build();
+
+try {
+    $request = new ListBalanceTransactionsRequest();
+    $request->customerId = 'doloremque';
+
+    $response = $sdk->customer->fetchTransactions($request);
+
+    if ($response->listBalanceTransactions200ApplicationJSONObject !== null) {
         // handle response
     }
 } catch (Exception $e) {
@@ -340,7 +566,7 @@ try {
 
 
 
-This endpoint returns a list of all customers for an account. The list of customers is ordered starting from the most recently created customer. This endpoint follows Orb's [standardized pagination format](../docs/Pagination.md).
+This endpoint returns a list of all customers for an account. The list of customers is ordered starting from the most recently created customer. This endpoint follows Orb's [standardized pagination format](../api/pagination).
 
 See [Customer](../reference/Orb-API.json/components/schemas/Customer) for an overview of the customer model.
 
@@ -369,69 +595,11 @@ try {
 }
 ```
 
-## update
-
-This endpoint can be used to update the `payment_provider`, `payment_provider_id`, `name`, `email`, `shipping_address`, and `billing_address` of an existing customer.
-
-Other fields on a customer are currently immutable.
-
-### Example Usage
-
-```php
-<?php
-
-declare(strict_types=1);
-require_once 'vendor/autoload.php';
-
-use \orb\orb\SDK;
-use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\PutCustomersCustomerIdRequest;
-use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBody;
-use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBodyBillingAddress;
-use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBodyPaymentProvider;
-use \orb\orb\Models\Operations\PutCustomersCustomerIdRequestBodyShippingAddress;
-
-$sdk = SDK::builder()
-    ->build();
-
-try {
-    $request = new PutCustomersCustomerIdRequest();
-    $request->requestBody = new PutCustomersCustomerIdRequestBody();
-    $request->requestBody->billingAddress = new PutCustomersCustomerIdRequestBodyBillingAddress();
-    $request->requestBody->billingAddress->city = 'Durganfurt';
-    $request->requestBody->billingAddress->country = 'US';
-    $request->requestBody->billingAddress->line1 = 'consequuntur';
-    $request->requestBody->billingAddress->line2 = 'repellat';
-    $request->requestBody->billingAddress->postalCode = '52444-2613';
-    $request->requestBody->billingAddress->state = 'vitae';
-    $request->requestBody->email = 'Madison77@hotmail.com';
-    $request->requestBody->name = 'Mandy Hills';
-    $request->requestBody->paymentProvider = PutCustomersCustomerIdRequestBodyPaymentProvider::STRIPE_INVOICE;
-    $request->requestBody->paymentProviderId = 'quasi';
-    $request->requestBody->shippingAddress = new PutCustomersCustomerIdRequestBodyShippingAddress();
-    $request->requestBody->shippingAddress->city = 'Smithamchester';
-    $request->requestBody->shippingAddress->country = 'US';
-    $request->requestBody->shippingAddress->line1 = 'quasi';
-    $request->requestBody->shippingAddress->line2 = 'reiciendis';
-    $request->requestBody->shippingAddress->postalCode = '84590-6470';
-    $request->requestBody->shippingAddress->state = 'doloremque';
-    $request->customerId = 'reprehenderit';
-
-    $response = $sdk->customer->update($request);
-
-    if ($response->customer !== null) {
-        // handle response
-    }
-} catch (Exception $e) {
-    // handle exception
-}
-```
-
 ## updateByExternalId
 
-This endpoint is used to update customer details given an `external_customer_id` (see [Customer ID Aliases](../docs/Customer-ID-Aliases.md)).
+This endpoint is used to update customer details given an `external_customer_id` (see [Customer ID Aliases](../guides/events-and-metrics/customer-aliases)).
 
-Note that the resource and semantics of this endpoint exactly mirror [Update Customer](Orb-API.json/paths/~1customers~1{customer_id}/put).
+Note that the resource and semantics of this endpoint exactly mirror [Update Customer](update-customer).
 
 ### Example Usage
 
@@ -443,30 +611,30 @@ require_once 'vendor/autoload.php';
 
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequest;
-use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBody;
-use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyBillingAddress;
-use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProvider;
-use \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyShippingAddress;
+use \orb\orb\Models\Operations\UpdateCustomerExternalIdRequest;
+use \orb\orb\Models\Operations\UpdateCustomerExternalIdRequestBody;
+use \orb\orb\Models\Shared\BillingAddress;
+use \orb\orb\Models\Operations\UpdateCustomerExternalIdRequestBodyPaymentProvider;
+use \orb\orb\Models\Shared\ShippingAddress;
 
 $sdk = SDK::builder()
     ->build();
 
 try {
-    $request = new PutCustomersExternalCustomerIdExternalCustomerIdRequest();
-    $request->requestBody = new PutCustomersExternalCustomerIdExternalCustomerIdRequestBody();
-    $request->requestBody->billingAddress = new PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyBillingAddress();
-    $request->requestBody->billingAddress->city = 'Fort Blanche';
+    $request = new UpdateCustomerExternalIdRequest();
+    $request->requestBody = new UpdateCustomerExternalIdRequestBody();
+    $request->requestBody->billingAddress = new BillingAddress();
+    $request->requestBody->billingAddress->city = 'Easterworth';
     $request->requestBody->billingAddress->country = 'US';
-    $request->requestBody->billingAddress->line1 = 'corporis';
-    $request->requestBody->billingAddress->line2 = 'dolore';
-    $request->requestBody->billingAddress->postalCode = '16384';
-    $request->requestBody->billingAddress->state = 'repudiandae';
-    $request->requestBody->email = 'Curt_Pouros@gmail.com';
+    $request->requestBody->billingAddress->line1 = 'dicta';
+    $request->requestBody->billingAddress->line2 = 'corporis';
+    $request->requestBody->billingAddress->postalCode = '41638';
+    $request->requestBody->billingAddress->state = 'commodi';
+    $request->requestBody->email = 'Anissa_Emmerich56@hotmail.com';
     $request->requestBody->name = 'Joel Lang';
-    $request->requestBody->paymentProvider = PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyPaymentProvider::QUICKBOOKS;
+    $request->requestBody->paymentProvider = UpdateCustomerExternalIdRequestBodyPaymentProvider::QUICKBOOKS;
     $request->requestBody->paymentProviderId = 'repudiandae';
-    $request->requestBody->shippingAddress = new PutCustomersExternalCustomerIdExternalCustomerIdRequestBodyShippingAddress();
+    $request->requestBody->shippingAddress = new ShippingAddress();
     $request->requestBody->shippingAddress->city = 'Arnoldoshire';
     $request->requestBody->shippingAddress->country = 'US';
     $request->requestBody->shippingAddress->line1 = 'incidunt';
@@ -485,62 +653,11 @@ try {
 }
 ```
 
-## updateUsage
+## updateCustomer
 
-This endpoint is used to amend usage within a timeframe for a customer that has an active subscription.
+This endpoint can be used to update the `payment_provider`, `payment_provider_id`, `name`, `email`, `email_delivery`, `auto_collection`, `shipping_address`, and `billing_address` of an existing customer.
 
-This endpoint will mark _all_ existing events within `[timeframe_start, timeframe_end)` as _ignored_  for billing  purposes, and Orb will only use the _new_ events passed in the body of this request as the source of truth for that timeframe moving forwards. Note that a given time period can be amended any number of times, so events can be overwritten in subsequent calls to this endpoint.
-
-This is a powerful and audit-safe mechanism to retroactively change usage data in cases where you need to:
-- decrease historical usage consumption because of degraded service availability in your systems
-- account for gaps from your usage reporting mechanism
-- make point-in-time fixes for specific event records, while retaining the original time of usage and associated metadata
-
-This amendment API is designed with two explicit goals:
-1. Amendments are **always audit-safe**. The amendment process will still retain original events in the timeframe, though they will be ignored for billing calculations. For auditing and data fidelity purposes, Orb never overwrites or permanently deletes ingested usage data.
-2. Amendments always preserve data **consistency**. In other words, either an amendment is fully processed by the system (and the new events for the timeframe are honored rather than the existing ones) or the amendment request fails. To maintain this important property, Orb prevents _partial event ingestion_ on this endpoint.
-
-
-## Response semantics
- - Either all events are ingested successfully, or all fail to ingest (returning a `4xx` or `5xx` response code).
-- Any event that fails schema validation will lead to a `4xx` response. In this case, to maintain data consistency, Orb will not ingest any events and will also not deprecate existing events in the time period.
-- You can assume that the amendment is successful on receipt of a `2xx` response.While a successful response from this endpoint indicates that the new events have been ingested, updating usage totals happens asynchronously and may be delayed by a few minutes. 
-
-As emphasized above, Orb will never show an inconsistent state (e.g. in invoice previews or dashboards); either it will show the existing state (before the amendment) or the new state (with new events in the requested timeframe).
-
-
-## Sample request body
-
-```json
-{
-	"events": [{
-		"event_name": "payment_processed",
-		"timestamp": "2022-03-24T07:15:00Z",
-		"properties": {
-			"amount": 100
-		}
-	}, {
-		"event_name": "payment_failed",
-		"timestamp": "2022-03-24T07:15:00Z",
-		"properties": {
-			"amount": 100
-		}
-	}]
-}
-```
-
-## Request Validation
-- The `timestamp` of each event reported must fall within the bounds of `timeframe_start` and `timeframe_end`. As with ingestion, all timestamps must be sent in ISO8601 format with UTC timezone offset.
-
-- Orb **does not accept an `idempotency_key`** with each event in this endpoint, since the entirety of the event list must be ingested to ensure consistency. On retryable errors, you should retry the request in its entirety, and assume that the amendment operation has not succeeded until receipt of a `2xx`.
-
-- Both `timeframe_start` and `timeframe_end` must be timestamps in the past. Furthermore, Orb will generally validate that the `timeframe_start` and `timeframe_end` fall within the customer's _current_ subscription billing period. However, Orb does allow amendments while in the grace period of the previous billing period; in this instance, the timeframe can start before the current period.
-
-
-## API Limits
-Note that Orb does not currently enforce a hard rate-limit for API usage or a maximum request payload size. Similar to the event ingestion API, this API is architected for high-throughput ingestion. It is also safe to _programmatically_ call this endpoint if your system can automatically detect a need for historical amendment.
-
-In order to overwrite timeframes with a very large number of events, we suggest using multiple calls with small adjacent (e.g. every hour) timeframes.
+Other fields on a customer are currently immutable.
 
 ### Example Usage
 
@@ -552,69 +669,52 @@ require_once 'vendor/autoload.php';
 
 use \orb\orb\SDK;
 use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequest;
-use \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequestBody;
-use \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequestBodyEvents;
+use \orb\orb\Models\Operations\UpdateCustomerRequest;
+use \orb\orb\Models\Operations\UpdateCustomerRequestBody;
+use \orb\orb\Models\Shared\BillingAddress;
+use \orb\orb\Models\Operations\UpdateCustomerRequestBodyPaymentProvider;
+use \orb\orb\Models\Shared\ShippingAddress;
+use \orb\orb\Models\Shared\CustomerTaxId;
 
 $sdk = SDK::builder()
     ->build();
 
 try {
-    $request = new PatchCustomersCustomerIdUsageRequest();
-    $request->requestBody = new PatchCustomersCustomerIdUsageRequestBody();
-    $request->requestBody->events = [
-        new PatchCustomersCustomerIdUsageRequestBodyEvents(),
-        new PatchCustomersCustomerIdUsageRequestBodyEvents(),
+    $request = new UpdateCustomerRequest();
+    $request->requestBody = new UpdateCustomerRequestBody();
+    $request->requestBody->autoCollection = false;
+    $request->requestBody->billingAddress = new BillingAddress();
+    $request->requestBody->billingAddress->city = 'East Grant';
+    $request->requestBody->billingAddress->country = 'US';
+    $request->requestBody->billingAddress->line1 = 'cupiditate';
+    $request->requestBody->billingAddress->line2 = 'quos';
+    $request->requestBody->billingAddress->postalCode = '18301';
+    $request->requestBody->billingAddress->state = 'dolorum';
+    $request->requestBody->email = 'Dominique.Prosacco96@yahoo.com';
+    $request->requestBody->emailDelivery = false;
+    $request->requestBody->metadata = [
+        'non' => 'eligendi',
+        'sint' => 'aliquid',
     ];
-    $request->customerId = 'qui';
-    $request->timeframeEnd = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-05-11T17:46:20Z');
-    $request->timeframeStart = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-05-11T17:46:20Z');
+    $request->requestBody->name = 'Terence Marquardt';
+    $request->requestBody->paymentProvider = UpdateCustomerRequestBodyPaymentProvider::NULL;
+    $request->requestBody->paymentProviderId = 'a';
+    $request->requestBody->shippingAddress = new ShippingAddress();
+    $request->requestBody->shippingAddress->city = 'Kingport';
+    $request->requestBody->shippingAddress->country = 'US';
+    $request->requestBody->shippingAddress->line1 = 'illum';
+    $request->requestBody->shippingAddress->line2 = 'maiores';
+    $request->requestBody->shippingAddress->postalCode = '12784-3682';
+    $request->requestBody->shippingAddress->state = 'occaecati';
+    $request->requestBody->taxId = new CustomerTaxId();
+    $request->requestBody->taxId->country = 'Gambia';
+    $request->requestBody->taxId->type = 'accusamus';
+    $request->requestBody->taxId->value = 'delectus';
+    $request->customerId = 'quidem';
 
-    $response = $sdk->customer->updateUsage($request);
+    $response = $sdk->customer->updateCustomer($request);
 
-    if ($response->patchCustomersCustomerIdUsage200ApplicationJSONObject !== null) {
-        // handle response
-    }
-} catch (Exception $e) {
-    // handle exception
-}
-```
-
-## updateUsageByExternalId
-
-This endpoint's resource and semantics exactly mirror [Amend customer usage](../reference/Orb-API.json/paths/~1customers~1{customer_id}~1usage/patch) but operates on an [external customer ID](see (../docs/Customer-ID-Aliases.md)) rather than an Orb issued identifier.
-
-### Example Usage
-
-```php
-<?php
-
-declare(strict_types=1);
-require_once 'vendor/autoload.php';
-
-use \orb\orb\SDK;
-use \orb\orb\Models\Shared\Security;
-use \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequest;
-use \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequestBody;
-use \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequestBodyEvents;
-
-$sdk = SDK::builder()
-    ->build();
-
-try {
-    $request = new PatchExternalCustomersCustomerIdUsageRequest();
-    $request->requestBody = new PatchExternalCustomersCustomerIdUsageRequestBody();
-    $request->requestBody->events = [
-        new PatchExternalCustomersCustomerIdUsageRequestBodyEvents(),
-        new PatchExternalCustomersCustomerIdUsageRequestBodyEvents(),
-    ];
-    $request->externalCustomerId = 'cupiditate';
-    $request->timeframeEnd = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-05-11T17:46:20Z');
-    $request->timeframeStart = DateTime::createFromFormat('Y-m-d\TH:i:sP', '2022-05-11T17:46:20Z');
-
-    $response = $sdk->customer->updateUsageByExternalId($request);
-
-    if ($response->patchExternalCustomersCustomerIdUsage200ApplicationJSONObject !== null) {
+    if ($response->customer !== null) {
         // handle response
     }
 } catch (Exception $e) {

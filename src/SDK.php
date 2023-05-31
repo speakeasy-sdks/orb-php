@@ -24,53 +24,67 @@ class SDK
 {
 	public const SERVERS = [
         /** Production server */
-		'https://api.billwithorb.com/v1',
+		'https://api.withorb.com/v1',
 	];
   	
     /**
-     * Actions related to API availability.
+     * The Availability resource represents a customer's availability. Availability is created when a customer's invoice is paid, and is updated when a customer's transaction is refunded.
      * 
      * @var Availability $$availability
      */
 	public Availability $availability;
 	
     /**
-     * Actions related to credit management.
+     * The Coupon resource represents a discount that can be applied to a customer's invoice. Coupons can be applied to a customer's invoice either by the customer or by the Orb API.
      * 
-     * @var Credits $$credits
+     * @var Coupon $$coupon
      */
-	public Credits $credits;
+	public Coupon $coupon;
 	
     /**
-     * Actions related to customer management.
+     * The Credits resource represents a customer's credits. Credits are created when a customer's invoice is paid, and are updated when a customer's transaction is refunded.
+     * 
+     * @var Credit $$credit
+     */
+	public Credit $credit;
+	
+    /**
+     * The Credit Note resource represents a credit note that has been generated for a customer. Credit Notes are generated when a customer's billing interval has elapsed, and are updated when a customer's invoice is paid.
+     * 
+     * @var CreditNote $$creditNote
+     */
+	public CreditNote $creditNote;
+	
+    /**
+     * The Customer resource represents a customer of your service. Customers are created when a customer is created in your service, and are updated when a customer's information is updated in your service.
      * 
      * @var Customer $$customer
      */
 	public Customer $customer;
 	
     /**
-     * Actions related to event management.
+     * The Event resource represents an event that has been created for a customer. Events are created when a customer's invoice is paid, and are updated when a customer's transaction is refunded.
      * 
      * @var Event $$event
      */
 	public Event $event;
 	
     /**
-     * Actions related to invoice management.
+     * The Invoice resource represents an invoice that has been generated for a customer. Invoices are generated when a customer's billing interval has elapsed, and are updated when a customer's invoice is paid.
      * 
      * @var Invoice $$invoice
      */
 	public Invoice $invoice;
 	
     /**
-     * Actions related to plan management.
+     * The Plan resource represents a plan that can be subscribed to by a customer. Plans define the amount of credits that a customer will receive, the price of the plan, and the billing interval.
      * 
      * @var Plan $$plan
      */
 	public Plan $plan;
 	
     /**
-     * Actions related to subscription mangement.
+     * The Subscription resource represents a customer's subscription to a plan. Subscriptions are created when a customer subscribes to a plan, and are updated when a customer's plan is changed.
      * 
      * @var Subscription $$subscription
      */
@@ -82,7 +96,7 @@ class SDK
 	private ?Models\Shared\Security $_security;
 	private string $_serverUrl;
 	private string $_language = 'php';
-	private string $_sdkVersion = '1.1.1';
+	private string $_sdkVersion = '1.1.2';
 	private string $_genVersion = '2.32.7';
 
 	/**
@@ -138,7 +152,25 @@ class SDK
 			$this->_genVersion
 		);
 		
-		$this->credits = new Credits(
+		$this->coupon = new Coupon(
+			$this->_defaultClient,
+			$this->_securityClient,
+			$this->_serverUrl,
+			$this->_language,
+			$this->_sdkVersion,
+			$this->_genVersion
+		);
+		
+		$this->credit = new Credit(
+			$this->_defaultClient,
+			$this->_securityClient,
+			$this->_serverUrl,
+			$this->_language,
+			$this->_sdkVersion,
+			$this->_genVersion
+		);
+		
+		$this->creditNote = new CreditNote(
 			$this->_defaultClient,
 			$this->_securityClient,
 			$this->_serverUrl,

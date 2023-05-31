@@ -27,6 +27,16 @@ class Invoice
     public string $amountDue;
     
     /**
+     * Information about payment auto-collection for this invoice.
+     * 
+     * @var ?\orb\orb\Models\Shared\InvoiceAutoCollection $autoCollection
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('auto_collection')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\InvoiceAutoCollection')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?InvoiceAutoCollection $autoCollection = null;
+    
+    /**
      * The creation time of the resource in Orb.
      * 
      * @var \DateTime $createdAt
@@ -34,6 +44,16 @@ class Invoice
 	#[\JMS\Serializer\Annotation\SerializedName('created_at')]
     #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
     public \DateTime $createdAt;
+    
+    /**
+     * A list of credit notes associated with the invoice
+     * 
+     * @var ?array<\orb\orb\Models\Shared\InvoiceCreditNotes> $creditNotes
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('credit_notes')]
+    #[\JMS\Serializer\Annotation\Type('array<orb\orb\Models\Shared\InvoiceCreditNotes>')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?array $creditNotes = null;
     
     /**
      * An ISO 4217 currency string or `credits`
@@ -63,13 +83,105 @@ class Invoice
     public array $customerBalanceTransactions;
     
     /**
-     * $discount
+     * Tax IDs are commonly required to be displayed on customer invoices, which are added to the headers of invoices.
      * 
-     * @var array<string, mixed> $discount
+     * 
+     * 
+     * ### Supported Tax ID Countries and Types
+     * 
+     * 
+     * | Country        | Type         | Description                                 |
+     * |----------------|--------------|---------------------------------------------|
+     * | Australia      | `au_abn`     | Australian Business Number (AU ABN)	        |
+     * | Australia      | `au_arn`     | Australian Taxation Office Reference Number |
+     * | Austria        | `eu_vat`     | European VAT number                         |
+     * | Belgium        | `eu_vat`     | European VAT number                         |
+     * | Brazil         | `br_cnpj`    | Brazilian CNPJ number                       |
+     * | Brazil         | `br_cpf`     | Brazilian CPF number	                       |
+     * | Bulgaria       | `bg_uic`     | Bulgaria Unified Identification Code        |
+     * | Bulgaria       | `eu_vat`     | European VAT number                         |
+     * | Canada         | `ca_bn`      | Canadian BN                                 |
+     * | Canada         | `ca_gst_hst` | Canadian GST/HST number                     |
+     * | Canada         | `ca_pst_bc`  | Canadian PST number (British Columbia)      |
+     * | Canada         | `ca_pst_mb`  | Canadian PST number (Manitoba)              |
+     * | Canada         | `ca_pst_sk`  | Canadian PST number (Saskatchewan)          |
+     * | Canada         | `ca_qst`     | Canadian QST number (Québec)                |
+     * | Chile          | `cl_tin`     | Chilean TIN                                 |
+     * | Croatia        | `eu_vat`     | European VAT number                         |
+     * | Cyprus         | `eu_vat`     | European VAT number                         |
+     * | Czech Republic | `eu_vat`     | European VAT number                         |
+     * | Denmark        | `eu_vat`     | European VAT number                         |
+     * | Egypt          | `eg_tin`     | Egyptian Tax Identification Number	         |
+     * | Estonia   | `eu_vat`     | European VAT number   |                                                                             
+     * | EU        | `eu_oss_vat` | European One Stop Shop VAT number for non-Union scheme                                                   |
+     * | Finland   | `eu_vat`     | European VAT number                                                                                      |
+     * | France    | `eu_vat`     | European VAT number                                                                                      |
+     * | Georgia   | `ge_vat`     | Georgian VAT                                                                                             |
+     * | Germany   | `eu_vat`     | European VAT number                                                                                      |
+     * | Greece    | `eu_vat`     | European VAT number                                                                                      |
+     * | Hong Kong | `hk_br`      | Hong Kong BR number                                                                                      |
+     * | Hungary   | `eu_vat`     | European VAT number                                                                                      |
+     * | Hungary   | `hu_tin`     | Hungary tax number (adószám)	                                                                            |
+     * | Iceland   | `is_vat`     | Icelandic VAT                                                                                            |
+     * | India     | `in_gst`     | Indian GST number                                                                                        |
+     * | Indonesia | `id_npwp`    | Indonesian NPWP number                                                                                   |
+     * | Ireland   | `eu_vat`     | European VAT number                                                                                      |
+     * | Israel    | `il_vat`     | Israel VAT                                                                                               |
+     * | Italy     | `eu_vat`     | European VAT number                                                                                      |
+     * | Japan     | `jp_cn`      | Japanese Corporate Number (*Hōjin Bangō*)                                                                |
+     * | Japan     | `jp_rn`      | Japanese Registered Foreign Businesses' Registration Number (*Tōroku Kokugai Jigyōsha no Tōroku Bangō*)	 |
+     * | Japan     | `jp_trn`     | Japanese Tax Registration Number (*Tōroku Bangō*)	                                                       |
+     * | Kenya     | `ke_pin`     | Kenya Revenue Authority Personal Identification Number                                                   |
+     * | Latvia    | `eu_vat`     | European VAT number                                                                                  |
+     * | Liechtenstein | `li_uid`  | Liechtensteinian UID number           |
+     * | Lithuania     | `eu_vat`  | European VAT number	                  |
+     * | Luxembourg    | `eu_vat`  | European VAT number	                  |
+     * | Malaysia      | `my_frp`  | Malaysian FRP number                  |
+     * | Malaysia      | `my_itn`  | Malaysian ITN                         |
+     * | Malaysia      | `my_sst`  | Malaysian SST number                  |
+     * | Malta         | `eu_vat ` | European VAT number                   |
+     * | Mexico        | `mx_rfc`  | Mexican RFC number                    |
+     * | Netherlands   | `eu_vat`  | European VAT number	                  |
+     * | New Zealand   | `nz_gst`  | New Zealand GST number	               |
+     * | Norway        | `no_vat`  | Norwegian VAT number                  |
+     * | Philippines   | `ph_tin	` | Philippines Tax Identification Number |
+     * | Poland        | `eu_vat`  | European VAT number                   |
+     * | Portugal      | `eu_vat`  | European VAT number                   |
+     * | Romania       | `eu_vat`  | European VAT number                   |
+     * | Russia        | `ru_inn`  | Russian INN                           |
+     * | Russia        | `ru_kpp`  | Russian KPP                           |
+     * | Saudi Arabia  | `sg_gst`  | Singaporean GST                       |
+     * | Singapore     | `sg_uen`  | Singaporean UEN	                      |
+     * | Slovakia      | `eu_vat`  | European VAT number                   |
+     * | Slovenia      | `eu_vat`  | European VAT number                   |
+     * | Slovenia             | `si_tin` | Slovenia tax number (davčna številka)	             |
+     * | South Africa	        | `za_vat` | South African VAT number                           |
+     * | South Korea          | `kr_brn` | Korean BRN                                         |
+     * | Spain                | `es_cif` | Spanish NIF number (previously Spanish CIF number) |
+     * | Spain                | `eu_vat` | European VAT number	                               |
+     * | Sweden               | `eu_vat` | European VAT number                                |
+     * | Switzerland          | `ch_vat` | Switzerland VAT number	                            |
+     * | Taiwan               | `tw_vat` | Taiwanese VAT	                                     |
+     * | Thailand             | `th_vat` | Thai VAT                                           |
+     * | Turkey               | `tr_tin` | Turkish Tax Identification Number                  |
+     * | Ukraine              | `ua_vat` | Ukrainian VAT                                      |
+     * | United Arab Emirates | `ae_trn` | United Arab Emirates TRN	                          |
+     * | United Kingdom       | `eu_vat` | Northern Ireland VAT number                        |
+     * | United Kingdom       | `gb_vat` | United Kingdom VAT number                          |
+     * | United States        | `us_ein` | United States EIN                                  |
+     * 
+     * 
+     * 
+     * @var ?\orb\orb\Models\Shared\CustomerTaxId $customerTaxId
      */
+	#[\JMS\Serializer\Annotation\SerializedName('customer_tax_id')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\CustomerTaxId')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?CustomerTaxId $customerTaxId = null;
+    
 	#[\JMS\Serializer\Annotation\SerializedName('discount')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $discount;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\Discount')]
+    public Discount $discount;
     
     /**
      * When the invoice payment is due.
@@ -79,6 +191,16 @@ class Invoice
 	#[\JMS\Serializer\Annotation\SerializedName('due_date')]
     #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
     public \DateTime $dueDate;
+    
+    /**
+     * A URL for the invoice portal.
+     * 
+     * @var ?string $hostedInvoiceUrl
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('hosted_invoice_url')]
+    #[\JMS\Serializer\Annotation\Type('string')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?string $hostedInvoiceUrl = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('id')]
     #[\JMS\Serializer\Annotation\Type('string')]
@@ -103,32 +225,96 @@ class Invoice
     public string $invoicePdf;
     
     /**
+     * If the invoice failed to issue, this will be the last time it failed to issue (even if it is now in a different state.)
+     * 
+     * @var ?\DateTime $issueFailedAt
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('issue_failed_at')]
+    #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?\DateTime $issueFailedAt = null;
+    
+    /**
+     * If the invoice has been issued, this will be the time it transitioned to `issued` (even if it is now in a different state.)
+     * 
+     * @var ?\DateTime $issuedAt
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('issued_at')]
+    #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?\DateTime $issuedAt = null;
+    
+    /**
      * The breakdown of prices in this invoice.
      * 
-     * @var array<\orb\orb\Models\Shared\InvoiceLineItems> $lineItems
+     * @var array<\orb\orb\Models\Shared\InvoiceLineItem> $lineItems
      */
 	#[\JMS\Serializer\Annotation\SerializedName('line_items')]
-    #[\JMS\Serializer\Annotation\Type('array<orb\orb\Models\Shared\InvoiceLineItems>')]
+    #[\JMS\Serializer\Annotation\Type('array<orb\orb\Models\Shared\InvoiceLineItem>')]
     public array $lineItems;
     
     /**
-     * $minimum
+     * Free-form text which is available on the invoice PDF and the Orb invoice portal.
      * 
-     * @var array<string, mixed> $minimum
+     * @var ?string $memo
      */
+	#[\JMS\Serializer\Annotation\SerializedName('memo')]
+    #[\JMS\Serializer\Annotation\Type('string')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?string $memo = null;
+    
 	#[\JMS\Serializer\Annotation\SerializedName('minimum')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $minimum;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\MinimumAmount')]
+    public MinimumAmount $minimum;
     
     /**
-     * The status of this invoice as known to Orb. Invoices that have been issued for past billing periods are marked `"issued"`. Invoices will be marked `"paid"` upon confirmation of successful automatic payment collection by Orb. Invoices synced to an external billing provider (such as Bill.com, QuickBooks, or Stripe Invoicing) will be marked as `"synced"`.
+     * If the invoice has a status of `paid`, this gives a timestamp when the invoice was paid.
      * 
-     * @var ?\orb\orb\Models\Shared\InvoiceStatus $status
+     * @var ?\DateTime $paidAt
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('paid_at')]
+    #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?\DateTime $paidAt = null;
+    
+    /**
+     * If payment was attempted on this invoice but failed, this will be the time of the most recent attempt.
+     * 
+     * @var ?\DateTime $paymentFailedAt
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('payment_failed_at')]
+    #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?\DateTime $paymentFailedAt = null;
+    
+    /**
+     * If payment was attempted on this invoice, this will be the start time of the most recent attempt. This field is especially useful for delayed-notification payment mechanisms (like bank transfers), where payment can take 3 days or more.
+     * 
+     * @var ?\DateTime $paymentStartedAt
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('payment_started_at')]
+    #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?\DateTime $paymentStartedAt = null;
+    
+    /**
+     * If the invoice is in draft, this timestamp will reflect when the invoice is scheduled to be issued.
+     * 
+     * @var ?\DateTime $scheduledIssueAt
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('scheduled_issue_at')]
+    #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?\DateTime $scheduledIssueAt = null;
+    
+    /**
+     * The status of this invoice as known to Orb. Invoices start in `"draft"` state for a given billing period, and are automatically transitioned to `"issued"` when that billing period ends. Invoices will be marked `"paid"` upon confirmation of successful automatic payment collection by Orb. Invoices may be manually voided; those will be in the terminal `"void"` state. Invoices synced to an external billing provider (such as Bill.com, QuickBooks, or Stripe Invoicing) will be marked as `"synced"`.
+     * 
+     * @var \orb\orb\Models\Shared\InvoiceStatus $status
      */
 	#[\JMS\Serializer\Annotation\SerializedName('status')]
     #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\InvoiceStatus>')]
-    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
-    public ?InvoiceStatus $status = null;
+    public InvoiceStatus $status;
     
     /**
      * The associated subscription for this invoice.
@@ -149,6 +335,16 @@ class Invoice
     public string $subtotal;
     
     /**
+     * If the invoice failed to sync, this will be the last time an external invoicing provider sync was attempted. This field will always be `null` for invoices using Orb Invoicing.
+     * 
+     * @var ?\DateTime $syncFailedAt
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('sync_failed_at')]
+    #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?\DateTime $syncFailedAt = null;
+    
+    /**
      * The total after any minimums, discounts, and taxes have been applied.
      * 
      * @var string $total
@@ -157,23 +353,46 @@ class Invoice
     #[\JMS\Serializer\Annotation\Type('string')]
     public string $total;
     
+    /**
+     * If the invoice has a status of `void`, this gives a timestamp when the invoice was voided.
+     * 
+     * @var ?\DateTime $voidedAt
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('voided_at')]
+    #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?\DateTime $voidedAt = null;
+    
 	public function __construct()
 	{
 		$this->amountDue = "";
+		$this->autoCollection = null;
 		$this->createdAt = new \DateTime();
+		$this->creditNotes = null;
 		$this->currency = "";
 		$this->customer = new \orb\orb\Models\Shared\InvoiceCustomer();
 		$this->customerBalanceTransactions = [];
-		$this->discount = [];
+		$this->customerTaxId = null;
+		$this->discount = new \orb\orb\Models\Shared\Discount();
 		$this->dueDate = new \DateTime();
+		$this->hostedInvoiceUrl = null;
 		$this->id = "";
 		$this->invoiceDate = new \DateTime();
 		$this->invoicePdf = "";
+		$this->issueFailedAt = null;
+		$this->issuedAt = null;
 		$this->lineItems = [];
-		$this->minimum = [];
-		$this->status = null;
+		$this->memo = null;
+		$this->minimum = new \orb\orb\Models\Shared\MinimumAmount();
+		$this->paidAt = null;
+		$this->paymentFailedAt = null;
+		$this->paymentStartedAt = null;
+		$this->scheduledIssueAt = null;
+		$this->status = \orb\orb\Models\Shared\InvoiceStatus::ISSUED;
 		$this->subscription = new \orb\orb\Models\Shared\InvoiceSubscription();
 		$this->subtotal = "";
+		$this->syncFailedAt = null;
 		$this->total = "";
+		$this->voidedAt = null;
 	}
 }
