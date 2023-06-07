@@ -9,7 +9,7 @@ declare(strict_types=1);
 namespace orb\orb;
 
 /**
- * SDK - Orb powers usage-based billing for the fastest-growing software companies.
+ * SDK - API Reference: Orb powers usage-based billing for the fastest-growing software companies.
  * 
  * Orb's API is built with the following principles in mind:
  * 
