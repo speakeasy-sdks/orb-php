@@ -14,7 +14,6 @@
 <!-- Start SDK Installation -->
 ## SDK Installation
 
-
 ### Composer
 
 To install the SDK first add the below to your `composer.json` file:
@@ -41,68 +40,115 @@ composer update
 <!-- End SDK Installation -->
 
 ## SDK Example Usage
-<!-- Start SDK Example Usage -->
+```php
+<?php
+
+declare(strict_types=1);
+require_once 'vendor/autoload.php';
+
+use \orb\orb\SDK;
+use \orb\orb\Models\Shared\Security;
+
+$sdk = SDK::builder()
+    ->build();
+
+try {
+    $response = $sdk->availability->ping();
+
+    if ($response->ping200ApplicationJSONObject !== null) {
+        // handle response
+    }
+} catch (Exception $e) {
+    // handle exception
+}
+```<!-- Start SDK Example Usage -->
 
 <!-- End SDK Example Usage -->
 
 <!-- Start SDK Available Operations -->
-## SDK Available Operations
+## Available Resources and Operations
 
 
-### availability
+### [availability](docs/availability/README.md)
 
-* `ping` - Check availability
+* [ping](docs/availability/README.md#ping) - Check availability
 
-### credits
+### [coupon](docs/coupon/README.md)
 
-* `create` - Add credit ledger entry
-* `getCredits` - Retrieve credit balance
-* `getCreditsLedger` - View credits ledger
+* [archive](docs/coupon/README.md#archive) - Archive a coupon
+* [create](docs/coupon/README.md#create) - Create a coupon
+* [fetch](docs/coupon/README.md#fetch) - Retrieve a coupon
+* [list](docs/coupon/README.md#list) - List coupons
+* [listSubscriptions](docs/coupon/README.md#listsubscriptions) - List subscriptions for a coupon
 
-### customer
+### [credit](docs/credit/README.md)
 
-* `create` - Create customer
-* `get` - Retrieve a customer
-* `getBalance` - Get customer balance transactions
-* `getByExternalId` - Retrieve a customer by external ID
-* `getCosts` - View customer costs
-* `getCostsByExternalId` - View customer costs by external customer ID
-* `list` - List customers
-* `update` - Update customer
-* `updateByExternalId` - Update a customer by external ID
-* `updateUsage` - Amend customer usage
-* `updateUsageByExternalId` - Amend customer usage by external ID
+* [addByExternalId](docs/credit/README.md#addbyexternalid) - Add credit ledger entry by external customer ID
+* [create](docs/credit/README.md#create) - Add credit ledger entry
+* [fetch](docs/credit/README.md#fetch) - Retrieve credit balance
+* [fetchByExternalId](docs/credit/README.md#fetchbyexternalid) - Retrieve credit balance by external customer ID
+* [fetchLedger](docs/credit/README.md#fetchledger) - View credits ledger
+* [fetchLedgerByExternalId](docs/credit/README.md#fetchledgerbyexternalid) - View credits ledger by external customer ID
 
-### event
+### [creditNote](docs/creditnote/README.md)
 
-* `deprecate` - Deprecate single event
-* `ingest` - Ingest events
-* `search` - Search events
-* `update` - Amend single event
+* [list](docs/creditnote/README.md#list) - List credit notes
 
-### invoice
+### [customer](docs/customer/README.md)
 
-* `get` - Retrieve an Invoice
-* `getUpcoming` - Retrieve upcoming invoice
-* `list` - List invoices
+* [amend](docs/customer/README.md#amend) - Amend customer usage
+* [amendByExternalId](docs/customer/README.md#amendbyexternalid) - Amend customer usage by external ID
+* [create](docs/customer/README.md#create) - Create customer
+* [createTransaction](docs/customer/README.md#createtransaction) - Create a customer balance transaction
+* [delete](docs/customer/README.md#delete) - Delete a customer
+* [fetch](docs/customer/README.md#fetch) - Retrieve a customer
+* [fetchByExternalId](docs/customer/README.md#fetchbyexternalid) - Retrieve a customer by external ID
+* [fetchCosts](docs/customer/README.md#fetchcosts) - View customer costs
+* [fetchCostsByExternalId](docs/customer/README.md#fetchcostsbyexternalid) - View customer costs by external customer ID
+* [fetchTransactions](docs/customer/README.md#fetchtransactions) - Get customer balance transactions
+* [list](docs/customer/README.md#list) - List customers
+* [updateByExternalId](docs/customer/README.md#updatebyexternalid) - Update a customer by external ID
+* [updateCustomer](docs/customer/README.md#updatecustomer) - Update customer
 
-### plan
+### [event](docs/event/README.md)
 
-* `get` - Retrieve a plan
-* `getByExternalId` - Retrieve a plan by external plan ID
-* `list` - List plans
+* [amend](docs/event/README.md#amend) - Amend single event
+* [closeBackfill](docs/event/README.md#closebackfill) - Close a backfill
+* [create](docs/event/README.md#create) - Create a backfill
+* [deprecateEvent](docs/event/README.md#deprecateevent) - Deprecate single event
+* [ingest](docs/event/README.md#ingest) - Ingest events
+* [listBackfills](docs/event/README.md#listbackfills) - List backfills
+* [revertBackfill](docs/event/README.md#revertbackfill) - Revert a backfill
+* [search](docs/event/README.md#search) - Search events
 
-### subscription
+### [invoice](docs/invoice/README.md)
 
-* `cancel` - Cancel subscription
-* `changeSchedule` - Schedule plan change
-* `create` - Create subscription
-* `get` - Retrieve a subscription
-* `getCost` - View subscription costs
-* `getSchedule` - View subscription schedule
-* `getUsage` - View subscription usage
-* `list` - List subscriptions
-* `unschedule` - Unschedule pending plan changes
+* [create](docs/invoice/README.md#create) - Create invoice line item
+* [fetch](docs/invoice/README.md#fetch) - Retrieve an Invoice
+* [fetchUpcoming](docs/invoice/README.md#fetchupcoming) - Retrieve upcoming invoice
+* [list](docs/invoice/README.md#list) - List invoices
+* [void](docs/invoice/README.md#void) - Void an invoice
+
+### [plan](docs/plan/README.md)
+
+* [fetch](docs/plan/README.md#fetch) - Retrieve a plan
+* [getByExternalId](docs/plan/README.md#getbyexternalid) - Retrieve a plan by external plan ID
+* [list](docs/plan/README.md#list) - List plans
+
+### [subscription](docs/subscription/README.md)
+
+* [cancel](docs/subscription/README.md#cancel) - Cancel subscription
+* [create](docs/subscription/README.md#create) - Create subscription
+* [create](docs/subscription/README.md#create) - Create subscription
+* [fetch](docs/subscription/README.md#fetch) - Retrieve a subscription
+* [fetchCosts](docs/subscription/README.md#fetchcosts) - View subscription costs
+* [fetchSchedule](docs/subscription/README.md#fetchschedule) - View subscription schedule
+* [fetchUsage](docs/subscription/README.md#fetchusage) - View subscription usage
+* [list](docs/subscription/README.md#list) - List subscriptions
+* [schedulePlanChange](docs/subscription/README.md#scheduleplanchange) - Schedule plan change
+* [unscheduleCancellation](docs/subscription/README.md#unschedulecancellation) - Unschedule pending cancellation
+* [unschedulePlanChange](docs/subscription/README.md#unscheduleplanchange) - Unschedule pending plan changes
+* [updateFixedFeeQuantity](docs/subscription/README.md#updatefixedfeequantity) - Update fixed fee quantity
 <!-- End SDK Available Operations -->
 
 ### Maturity

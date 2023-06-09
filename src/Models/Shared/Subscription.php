@@ -34,6 +34,25 @@ class Subscription
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
     public ?float $activePlanPhaseOrder = null;
     
+    /**
+     * Determines whether issued invoices for this subscription will automatically be charged with the saved payment method on the due date. This property defaults to the plan's behavior.
+     * 
+     * @var ?bool $autoCollection
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('auto_collection')]
+    #[\JMS\Serializer\Annotation\Type('bool')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?bool $autoCollection = null;
+    
+    /**
+     * The day of the month on which the billing cycle is anchored. If the maximum number of days in a month is greater than this value, the last day of the month is the billing cycle day (e.g. billing_cycle_day=31 for April means the billing period begins on the 30th.
+     * 
+     * @var float $billingCycleDay
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('billing_cycle_day')]
+    #[\JMS\Serializer\Annotation\Type('float')]
+    public float $billingCycleDay;
+    
 	#[\JMS\Serializer\Annotation\SerializedName('created_at')]
     #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
     public \DateTime $createdAt;
@@ -62,17 +81,27 @@ class Subscription
      * A customer is a buyer of your products, and the other party to the billing relationship.
      * 
      * 
-     * In Orb, customers are assigned system generated identifiers automatically, but it's often desirable to have these match existing identifiers in your system. To avoid having to denormalize Orb ID information, you can pass in an `external_customer_id` with your own identifier. See [Customer ID Aliases](../docs/Customer-ID-Aliases.md) for further information about how these aliases work in Orb.
+     * In Orb, customers are assigned system generated identifiers automatically, but it's often desirable to have these match existing identifiers in your system. To avoid having to denormalize Orb ID information, you can pass in an `external_customer_id` with your own identifier. See [Customer ID Aliases](../guides/events-and-metrics/customer-aliases) for further information about how these aliases work in Orb.
      * 
      * In addition to having an identifier in your system, a customer may exist in a payment provider solution like Stripe. Use the `payment_provider_id` and the `payment_provider` enum field to express this mapping.
      * 
-     * A customer also has a timezone (from the standard [IANA timezone database](https://www.iana.org/time-zones)), which defaults to your account's timezone. See [Timezone localization](../docs/Timezone-localization.md) for information on what this timezone parameter influences within Orb.
+     * A customer also has a timezone (from the standard [IANA timezone database](https://www.iana.org/time-zones)), which defaults to your account's timezone. See [Timezone localization](../guides/product-catalog/) for information on what this timezone parameter influences within Orb.
      * 
      * @var \orb\orb\Models\Shared\Customer $customer
      */
 	#[\JMS\Serializer\Annotation\SerializedName('customer')]
     #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\Customer')]
     public Customer $customer;
+    
+    /**
+     * Determines the default memo on this subscriptions' invoices. Note that if this is not provided, it is determined by the plan configuration.
+     * 
+     * @var ?string $defaultInvoiceMemo
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('default_invoice_memo')]
+    #[\JMS\Serializer\Annotation\Type('string')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?string $defaultInvoiceMemo = null;
     
     /**
      * The date Orb stops billing for this subscription.
@@ -83,13 +112,46 @@ class Subscription
     #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
     public \DateTime $endDate;
     
+    /**
+     * List of all fixed fee quantities associated with this subscription, with their start and end dates. This list contains the initial quantity along with quantity changes.
+     * 
+     * @var array<\orb\orb\Models\Shared\SubscriptionFixedFeeQuantitySchedule> $fixedFeeQuantitySchedule
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('fixed_fee_quantity_schedule')]
+    #[\JMS\Serializer\Annotation\Type('array<orb\orb\Models\Shared\SubscriptionFixedFeeQuantitySchedule>')]
+    public array $fixedFeeQuantitySchedule;
+    
 	#[\JMS\Serializer\Annotation\SerializedName('id')]
     #[\JMS\Serializer\Annotation\Type('string')]
     public string $id;
     
+    /**
+     * User specified key-value pairs. If no metadata was specified at subscription creation time, this defaults to an empty dictionary.
+     * 
+     * @var array<string, mixed> $metadata
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('metadata')]
+    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
+    public array $metadata;
+    
+    /**
+     * Determines the difference between the invoice issue date for subscription invoices as the date that they are due. A value of "0" here represents that the invoice is due on issue, whereas a value of 30 represents that the customer has a month to pay the invoice.
+     * 
+     * @var ?int $netTerms
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('net_terms')]
+    #[\JMS\Serializer\Annotation\Type('int')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?int $netTerms = null;
+    
 	#[\JMS\Serializer\Annotation\SerializedName('plan')]
     #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\Plan')]
     public Plan $plan;
+    
+	#[\JMS\Serializer\Annotation\SerializedName('redeemed_coupon')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\SubscriptionRedeemedCoupon')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?SubscriptionRedeemedCoupon $redeemedCoupon = null;
     
     /**
      * The date Orb starts billing for this subscription.
@@ -101,20 +163,27 @@ class Subscription
     public \DateTime $startDate;
     
 	#[\JMS\Serializer\Annotation\SerializedName('status')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\SubscriptionStatusEnum>')]
-    public SubscriptionStatusEnum $status;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\SubscriptionStatus>')]
+    public SubscriptionStatus $status;
     
 	public function __construct()
 	{
 		$this->activePlanPhaseOrder = null;
+		$this->autoCollection = null;
+		$this->billingCycleDay = 0;
 		$this->createdAt = new \DateTime();
 		$this->currentBillingPeriodEndDate = null;
 		$this->currentBillingPeriodStartDate = null;
 		$this->customer = new \orb\orb\Models\Shared\Customer();
+		$this->defaultInvoiceMemo = null;
 		$this->endDate = new \DateTime();
+		$this->fixedFeeQuantitySchedule = [];
 		$this->id = "";
+		$this->metadata = [];
+		$this->netTerms = null;
 		$this->plan = new \orb\orb\Models\Shared\Plan();
+		$this->redeemedCoupon = null;
 		$this->startDate = new \DateTime();
-		$this->status = \orb\orb\Models\Shared\SubscriptionStatusEnum::ACTIVE;
+		$this->status = \orb\orb\Models\Shared\SubscriptionStatus::ACTIVE;
 	}
 }

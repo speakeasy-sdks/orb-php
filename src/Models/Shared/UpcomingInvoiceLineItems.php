@@ -20,6 +20,10 @@ class UpcomingInvoiceLineItems
     #[\JMS\Serializer\Annotation\Type('string')]
     public string $amount;
     
+	#[\JMS\Serializer\Annotation\SerializedName('discount')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\Discount')]
+    public Discount $discount;
+    
     /**
      * The end date of the range of time applied for this line item's price.
      * 
@@ -37,6 +41,10 @@ class UpcomingInvoiceLineItems
 	#[\JMS\Serializer\Annotation\SerializedName('grouping')]
     #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\UpcomingInvoiceLineItemsGrouping')]
     public UpcomingInvoiceLineItemsGrouping $grouping;
+    
+	#[\JMS\Serializer\Annotation\SerializedName('minimum')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\MinimumAmount')]
+    public MinimumAmount $minimum;
     
     /**
      * The name of the price associated with this line item.
@@ -81,8 +89,10 @@ class UpcomingInvoiceLineItems
 	public function __construct()
 	{
 		$this->amount = "";
+		$this->discount = new \orb\orb\Models\Shared\Discount();
 		$this->endDate = new \DateTime();
 		$this->grouping = new \orb\orb\Models\Shared\UpcomingInvoiceLineItemsGrouping();
+		$this->minimum = new \orb\orb\Models\Shared\MinimumAmount();
 		$this->name = "";
 		$this->quantity = 0;
 		$this->startDate = new \DateTime();

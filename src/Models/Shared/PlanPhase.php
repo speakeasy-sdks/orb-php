@@ -22,14 +22,9 @@ class PlanPhase
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
     public ?string $description = null;
     
-    /**
-     * $discount
-     * 
-     * @var array<string, mixed> $discount
-     */
 	#[\JMS\Serializer\Annotation\SerializedName('discount')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $discount;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\Discount')]
+    public Discount $discount;
     
     /**
      * How many terms of length `duration_unit` this phase is active for. If null, this phase is evergreen and active indefinitely
@@ -44,20 +39,15 @@ class PlanPhase
     /**
      * Term for this plan, which is the maximum cadence among all component prices
      * 
-     * @var \orb\orb\Models\Shared\PlanPhaseDurationUnitEnum $durationUnit
+     * @var \orb\orb\Models\Shared\PlanPhaseDurationUnit $durationUnit
      */
 	#[\JMS\Serializer\Annotation\SerializedName('duration_unit')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PlanPhaseDurationUnitEnum>')]
-    public PlanPhaseDurationUnitEnum $durationUnit;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PlanPhaseDurationUnit>')]
+    public PlanPhaseDurationUnit $durationUnit;
     
-    /**
-     * $minimum
-     * 
-     * @var array<string, mixed> $minimum
-     */
 	#[\JMS\Serializer\Annotation\SerializedName('minimum')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $minimum;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\MinimumAmount')]
+    public MinimumAmount $minimum;
     
 	#[\JMS\Serializer\Annotation\SerializedName('name')]
     #[\JMS\Serializer\Annotation\Type('string')]
@@ -77,10 +67,10 @@ class PlanPhase
 	public function __construct()
 	{
 		$this->description = null;
-		$this->discount = [];
+		$this->discount = new \orb\orb\Models\Shared\Discount();
 		$this->duration = null;
-		$this->durationUnit = \orb\orb\Models\Shared\PlanPhaseDurationUnitEnum::MONTHLY;
-		$this->minimum = [];
+		$this->durationUnit = \orb\orb\Models\Shared\PlanPhaseDurationUnit::MONTHLY;
+		$this->minimum = new \orb\orb\Models\Shared\MinimumAmount();
 		$this->name = null;
 		$this->order = null;
 	}
