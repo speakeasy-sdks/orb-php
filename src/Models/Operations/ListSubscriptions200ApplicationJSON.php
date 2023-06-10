@@ -27,15 +27,10 @@ class ListSubscriptions200ApplicationJSON
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
     public ?array $data = null;
     
-    /**
-     * $paginationMetadata
-     * 
-     * @var ?array<string, mixed> $paginationMetadata
-     */
 	#[\JMS\Serializer\Annotation\SerializedName('pagination_metadata')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\PaginationMetadata')]
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
-    public ?array $paginationMetadata = null;
+    public ?\orb\orb\Models\Shared\PaginationMetadata $paginationMetadata = null;
     
 	public function __construct()
 	{

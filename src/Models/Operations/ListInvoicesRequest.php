@@ -28,6 +28,14 @@ class ListInvoicesRequest
     public ?string $externalCustomerId = null;
     
     /**
+     * Filter to invoices of a particular status (`draft`, `issued`, `paid`, `void`, `synced`); this param can be used to filter to a single status (`?status="draft"`) or a set of statuses (`?status[]=paid&status[]=void`)
+     * 
+     * @var mixed $status
+     */
+	#[SpeakeasyMetadata('queryParam:style=form,explode=true,name=status')]
+    public mixed $status = null;
+    
+    /**
      * Filter by a specific subscription
      * 
      * @var ?string $subscriptionId
@@ -39,6 +47,7 @@ class ListInvoicesRequest
 	{
 		$this->customerId = null;
 		$this->externalCustomerId = null;
+		$this->status = null;
 		$this->subscriptionId = null;
 	}
 }

@@ -51,11 +51,11 @@ class UpcomingInvoiceLineItemsSubLineItems
     /**
      * An identifier for a sub line item that is specific to a pricing model.
      * 
-     * @var \orb\orb\Models\Shared\UpcomingInvoiceLineItemsSubLineItemsTypeEnum $type
+     * @var \orb\orb\Models\Shared\UpcomingInvoiceLineItemsSubLineItemsType $type
      */
 	#[\JMS\Serializer\Annotation\SerializedName('type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\UpcomingInvoiceLineItemsSubLineItemsTypeEnum>')]
-    public UpcomingInvoiceLineItemsSubLineItemsTypeEnum $type;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\UpcomingInvoiceLineItemsSubLineItemsType>')]
+    public UpcomingInvoiceLineItemsSubLineItemsType $type;
     
 	public function __construct()
 	{
@@ -64,6 +64,6 @@ class UpcomingInvoiceLineItemsSubLineItems
 		$this->name = "";
 		$this->quantity = 0;
 		$this->tierConfig = null;
-		$this->type = \orb\orb\Models\Shared\UpcomingInvoiceLineItemsSubLineItemsTypeEnum::MATRIX;
+		$this->type = \orb\orb\Models\Shared\UpcomingInvoiceLineItemsSubLineItemsType::Matrix;
 	}
 }

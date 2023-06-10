@@ -11,31 +11,162 @@ namespace orb\orb;
 class Customer 
 {
 
-	// SDK private variables namespaced with _ to avoid conflicts with API models
-	private \GuzzleHttp\ClientInterface $_defaultClient;
-	private \GuzzleHttp\ClientInterface $_securityClient;
-	private string $_serverUrl;
-	private string $_language;
-	private string $_sdkVersion;
-	private string $_genVersion;	
+	private SDKConfiguration $sdkConfiguration;
 
 	/**
-	 * @param \GuzzleHttp\ClientInterface $defaultClient
-	 * @param \GuzzleHttp\ClientInterface $securityClient
-	 * @param string $serverUrl
-	 * @param string $language
-	 * @param string $sdkVersion
-	 * @param string $genVersion
+	 * @param SDKConfiguration $sdkConfig
 	 */
-	public function __construct(\GuzzleHttp\ClientInterface $defaultClient, \GuzzleHttp\ClientInterface $securityClient, string $serverUrl, string $language, string $sdkVersion, string $genVersion)
+	public function __construct(SDKConfiguration $sdkConfig)
 	{
-		$this->_defaultClient = $defaultClient;
-		$this->_securityClient = $securityClient;
-		$this->_serverUrl = $serverUrl;
-		$this->_language = $language;
-		$this->_sdkVersion = $sdkVersion;
-		$this->_genVersion = $genVersion;
+		$this->sdkConfiguration = $sdkConfig;
 	}
+	
+    /**
+     * Amend customer usage
+     * 
+     * This endpoint is used to amend usage within a timeframe for a customer that has an active subscription.
+     * 
+     * This endpoint will mark _all_ existing events within `[timeframe_start, timeframe_end)` as _ignored_  for billing  purposes, and Orb will only use the _new_ events passed in the body of this request as the source of truth for that timeframe moving forwards. Note that a given time period can be amended any number of times, so events can be overwritten in subsequent calls to this endpoint.
+     * 
+     * This is a powerful and audit-safe mechanism to retroactively change usage data in cases where you need to:
+     * - decrease historical usage consumption because of degraded service availability in your systems
+     * - account for gaps from your usage reporting mechanism
+     * - make point-in-time fixes for specific event records, while retaining the original time of usage and associated metadata
+     * 
+     * This amendment API is designed with two explicit goals:
+     * 1. Amendments are **always audit-safe**. The amendment process will still retain original events in the timeframe, though they will be ignored for billing calculations. For auditing and data fidelity purposes, Orb never overwrites or permanently deletes ingested usage data.
+     * 2. Amendments always preserve data **consistency**. In other words, either an amendment is fully processed by the system (and the new events for the timeframe are honored rather than the existing ones) or the amendment request fails. To maintain this important property, Orb prevents _partial event ingestion_ on this endpoint.
+     * 
+     * 
+     * ## Response semantics
+     *  - Either all events are ingested successfully, or all fail to ingest (returning a `4xx` or `5xx` response code).
+     * - Any event that fails schema validation will lead to a `4xx` response. In this case, to maintain data consistency, Orb will not ingest any events and will also not deprecate existing events in the time period.
+     * - You can assume that the amendment is successful on receipt of a `2xx` response.While a successful response from this endpoint indicates that the new events have been ingested, updating usage totals happens asynchronously and may be delayed by a few minutes. 
+     * 
+     * As emphasized above, Orb will never show an inconsistent state (e.g. in invoice previews or dashboards); either it will show the existing state (before the amendment) or the new state (with new events in the requested timeframe).
+     * 
+     * 
+     * ## Sample request body
+     * 
+     * ```json
+     * {
+     * 	"events": [{
+     * 		"event_name": "payment_processed",
+     * 		"timestamp": "2022-03-24T07:15:00Z",
+     * 		"properties": {
+     * 			"amount": 100
+     * 		}
+     * 	}, {
+     * 		"event_name": "payment_failed",
+     * 		"timestamp": "2022-03-24T07:15:00Z",
+     * 		"properties": {
+     * 			"amount": 100
+     * 		}
+     * 	}]
+     * }
+     * ```
+     * 
+     * ## Request Validation
+     * - The `timestamp` of each event reported must fall within the bounds of `timeframe_start` and `timeframe_end`. As with ingestion, all timestamps must be sent in ISO8601 format with UTC timezone offset.
+     * 
+     * - Orb **does not accept an `idempotency_key`** with each event in this endpoint, since the entirety of the event list must be ingested to ensure consistency. On retryable errors, you should retry the request in its entirety, and assume that the amendment operation has not succeeded until receipt of a `2xx`.
+     * 
+     * - Both `timeframe_start` and `timeframe_end` must be timestamps in the past. Furthermore, Orb will generally validate that the `timeframe_start` and `timeframe_end` fall within the customer's _current_ subscription billing period. However, Orb does allow amendments while in the grace period of the previous billing period; in this instance, the timeframe can start before the current period.
+     * 
+     * 
+     * ## API Limits
+     * Note that Orb does not currently enforce a hard rate-limit for API usage or a maximum request payload size. Similar to the event ingestion API, this API is architected for high-throughput ingestion. It is also safe to _programmatically_ call this endpoint if your system can automatically detect a need for historical amendment.
+     * 
+     * In order to overwrite timeframes with a very large number of events, we suggest using multiple calls with small adjacent (e.g. every hour) timeframes.
+     * 
+     * @param \orb\orb\Models\Operations\AmendUsageRequest $request
+     * @return \orb\orb\Models\Operations\AmendUsageResponse
+     */
+	public function amend(
+        \orb\orb\Models\Operations\AmendUsageRequest $request,
+    ): \orb\orb\Models\Operations\AmendUsageResponse
+    {
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}/usage', \orb\orb\Models\Operations\AmendUsageRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
+        $options = array_merge_recursive($options, $body);
+        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\AmendUsageRequest::class, $request, null));
+        $options['headers']['Accept'] = 'application/json;q=1, application/json;q=0';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
+        
+        $httpResponse = $this->sdkConfiguration->securityClient->request('PATCH', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\AmendUsageResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->amendUsage200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\AmendUsage200ApplicationJSON', 'json');
+            }
+        }
+        else if ($httpResponse->getStatusCode() === 400) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->amendUsage400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\AmendUsage400ApplicationJSON', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * Amend customer usage by external ID
+     * 
+     * This endpoint's resource and semantics exactly mirror [Amend customer usage](amend-usage) but operates on an [external customer ID](../guides/events-and-metrics/customer-aliases) rather than an Orb issued identifier.
+     * 
+     * @param \orb\orb\Models\Operations\AmendUsageExternalCustomerIdRequest $request
+     * @return \orb\orb\Models\Operations\AmendUsageExternalCustomerIdResponse
+     */
+	public function amendByExternalId(
+        \orb\orb\Models\Operations\AmendUsageExternalCustomerIdRequest $request,
+    ): \orb\orb\Models\Operations\AmendUsageExternalCustomerIdResponse
+    {
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/external_customer_id/{external_customer_id}/usage', \orb\orb\Models\Operations\AmendUsageExternalCustomerIdRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
+        $options = array_merge_recursive($options, $body);
+        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\AmendUsageExternalCustomerIdRequest::class, $request, null));
+        $options['headers']['Accept'] = 'application/json;q=1, application/json;q=0';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
+        
+        $httpResponse = $this->sdkConfiguration->securityClient->request('PATCH', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\AmendUsageExternalCustomerIdResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->amendUsageExternalCustomerId200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\AmendUsageExternalCustomerId200ApplicationJSON', 'json');
+            }
+        }
+        else if ($httpResponse->getStatusCode() === 400) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->amendUsageExternalCustomerId400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\AmendUsageExternalCustomerId400ApplicationJSON', 'json');
+            }
+        }
+
+        return $response;
+    }
 	
     /**
      * Create customer
@@ -44,28 +175,30 @@ class Customer
      * 
      * This endpoint is critical in the following Orb functionality:
      * * Automated charges can be configured by setting `payment_provider` and `payment_provider_id` to automatically issue invoices
-     * * [Customer ID Aliases](../docs/Customer-ID-Aliases.md) can be configured by setting `external_customer_id`
-     * * [Timezone localization](../docs/Timezone-localization.md) can be configured on a per-customer basis by setting the `timezone` parameter
+     * * [Customer ID Aliases](../guides/events-and-metrics/customer-aliases) can be configured by setting `external_customer_id`
+     * * [Timezone localization](../guides/product-catalog/timezones) can be configured on a per-customer basis by setting the `timezone` parameter
      * 
-     * @param \orb\orb\Models\Operations\PostCustomersRequestBody $request
-     * @return \orb\orb\Models\Operations\PostCustomersResponse
+     * @param \orb\orb\Models\Operations\CreateCustomerRequestBody $request
+     * @return \orb\orb\Models\Operations\CreateCustomerResponse
      */
 	public function create(
-        \orb\orb\Models\Operations\PostCustomersRequestBody $request,
-    ): \orb\orb\Models\Operations\PostCustomersResponse
+        \orb\orb\Models\Operations\CreateCustomerRequestBody $request,
+    ): \orb\orb\Models\Operations\CreateCustomerResponse
     {
-        $baseUrl = $this->_serverUrl;
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/customers');
         
         $options = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, "request", "json");
         $options = array_merge_recursive($options, $body);
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('POST', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('POST', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\PostCustomersResponse();
+        $response = new \orb\orb\Models\Operations\CreateCustomerResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -75,6 +208,82 @@ class Customer
                 $serializer = Utils\JSON::createSerializer();
                 $response->customer = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Customer', 'json');
             }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * Create a customer balance transaction
+     * 
+     * Creates an immutable balance transaction that updates the customer's balance and returns back the newly created [transaction](../reference/Orb-API.json/components/schemas/Customer-balance-transaction).
+     * 
+     * @param \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsRequest $request
+     * @return \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsResponse
+     */
+	public function createTransaction(
+        \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsRequest $request,
+    ): \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsResponse
+    {
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}/balance_transactions', \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
+        $options = array_merge_recursive($options, $body);
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
+        
+        $httpResponse = $this->sdkConfiguration->securityClient->request('POST', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\PostCustomersCustomerIdBalanceTransactionsResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->customerBalanceTransaction = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\CustomerBalanceTransaction', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * Delete a customer
+     * 
+     * This performs a deletion of this customer, its subscriptions, and its invoices. This operation is irreversible. Note that this is a _soft_ deletion, but the data will be inaccessible through the API and Orb dashboard. For hard-deletion, please reach out to the Orb team directly.
+     * 
+     * **Note**: This operation happens asynchronously and can be expected to take a few minutes to propagate to related resources. However, querying for the customer on subsequent GET requests while deletion is in process will reflect its deletion with a `deleted: true` property. Once the customer deletion has been fully processed, the customer will not be returned in the API.
+     * 
+     * @param \orb\orb\Models\Operations\DeleteCustomerRequest $request
+     * @return \orb\orb\Models\Operations\DeleteCustomerResponse
+     */
+	public function delete(
+        \orb\orb\Models\Operations\DeleteCustomerRequest $request,
+    ): \orb\orb\Models\Operations\DeleteCustomerResponse
+    {
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}', \orb\orb\Models\Operations\DeleteCustomerRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $options['headers']['Accept'] = '*/*';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
+        
+        $httpResponse = $this->sdkConfiguration->securityClient->request('DELETE', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\DeleteCustomerResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 204) {
         }
 
         return $response;
@@ -83,27 +292,30 @@ class Customer
     /**
      * Retrieve a customer
      * 
-     * This endpoint is used to fetch customer details given an identifier.
+     * This endpoint is used to fetch customer details given an identifier. If the `Customer` is in the process of being deleted, only the properties `id` and `deleted: true` will be returned.
      * 
      * See the [Customer resource](Orb-API.json/components/schemas/Customer) for a full discussion of the Customer model.
      * 
-     * @param \orb\orb\Models\Operations\GetCustomersCustomerIdRequest $request
-     * @return \orb\orb\Models\Operations\GetCustomersCustomerIdResponse
+     * 
+     * @param \orb\orb\Models\Operations\FetchCustomerRequest $request
+     * @return \orb\orb\Models\Operations\FetchCustomerResponse
      */
-	public function get(
-        \orb\orb\Models\Operations\GetCustomersCustomerIdRequest $request,
-    ): \orb\orb\Models\Operations\GetCustomersCustomerIdResponse
+	public function fetch(
+        \orb\orb\Models\Operations\FetchCustomerRequest $request,
+    ): \orb\orb\Models\Operations\FetchCustomerResponse
     {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}', \orb\orb\Models\Operations\GetCustomersCustomerIdRequest::class, $request);
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}', \orb\orb\Models\Operations\FetchCustomerRequest::class, $request);
         
         $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\GetCustomersCustomerIdResponse();
+        $response = new \orb\orb\Models\Operations\FetchCustomerResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -112,54 +324,6 @@ class Customer
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
                 $response->customer = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Customer', 'json');
-            }
-        }
-
-        return $response;
-    }
-	
-    /**
-     * Get customer balance transactions
-     * 
-     * # The customer balance
-     * 
-     * The customer balance is an amount in the customer's currency, which Orb automatically applies to subsequent invoices. This balance can be adjusted manually via Orb's webapp on the customer details page. You can use this balance to provide a fixed mid-period credit to the customer. Commonly, this is done due to system downtime/SLA violation, or an adhoc adjustment discussed with the customer.
-     * 
-     * If the balance is a positive value at the time of invoicing, it represents that the customer has credit that should be used to offset the amount due on the next issued invoice. In this case, Orb will automatically reduce the next invoice by the balance amount, and roll over any remaining balance if the invoice is fully discounted.
-     * 
-     * If the balance is a negative value at the time of invoicing, Orb will increase the invoice's amount due with a positive adjustment, and reset the balance to 0.
-     * 
-     * This endpoint retrieves all customer balance transactions in reverse chronological order for a single customer, providing a complete audit trail of all adjustments and invoice applications.
-     * 
-     * ## Eligibility
-     * 
-     * The customer balance can only be applied to invoices or adjusted manually if invoices are not synced to a separate invoicing provider. If a payment gateway such as Stripe is used, the balance will be applied to the invoice before forwarding payment to the gateway.
-     * 
-     * @param \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsRequest $request
-     * @return \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsResponse
-     */
-	public function getBalance(
-        \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsRequest $request,
-    ): \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsResponse
-    {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}/balance_transactions', \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsRequest::class, $request);
-        
-        $options = ['http_errors' => false];
-        
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
-        
-        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
-
-        $response = new \orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactionsResponse();
-        $response->statusCode = $httpResponse->getStatusCode();
-        $response->contentType = $contentType;
-        $response->rawResponse = $httpResponse;
-        
-        if ($httpResponse->getStatusCode() === 200) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $serializer = Utils\JSON::createSerializer();
-                $response->getCustomersCustomerIdBalanceTransactions200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\GetCustomersCustomerIdBalanceTransactions200ApplicationJSON', 'json');
             }
         }
 
@@ -169,27 +333,29 @@ class Customer
     /**
      * Retrieve a customer by external ID
      * 
-     * This endpoint is used to fetch customer details given an `external_customer_id` (see [Customer ID Aliases](../docs/Customer-ID-Aliases.md)).
+     * This endpoint is used to fetch customer details given an `external_customer_id` (see [Customer ID Aliases](../guides/events-and-metrics/customer-aliases)).
      * 
-     * Note that the resource and semantics of this endpoint exactly mirror [Get Customer](Orb-API.json/paths/~1customers/get).
+     * Note that the resource and semantics of this endpoint exactly mirror [Get Customer](fetch-customer).
      * 
-     * @param \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdRequest $request
-     * @return \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdResponse
+     * @param \orb\orb\Models\Operations\FetchCustomerExternalIdRequest $request
+     * @return \orb\orb\Models\Operations\FetchCustomerExternalIdResponse
      */
-	public function getByExternalId(
-        \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdRequest $request,
-    ): \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdResponse
+	public function fetchByExternalId(
+        \orb\orb\Models\Operations\FetchCustomerExternalIdRequest $request,
+    ): \orb\orb\Models\Operations\FetchCustomerExternalIdResponse
     {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/external_customer_id/{external_customer_id}', \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdRequest::class, $request);
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/external_customer_id/{external_customer_id}', \orb\orb\Models\Operations\FetchCustomerExternalIdRequest::class, $request);
         
         $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\GetCustomersExternalCustomerIdExternalCustomerIdResponse();
+        $response = new \orb\orb\Models\Operations\FetchCustomerExternalIdResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -207,12 +373,12 @@ class Customer
     /**
      * View customer costs
      * 
-     * This endpoint is used to fetch a day-by-day snapshot of a customer's costs in Orb, calculated by applying pricing information to the underlying usage (see the [subscription usage endpoint](../reference/Orb-API.json/paths/~1subscriptions~1{subscription_id}~1usage/get) to fetch usage per metric, in usage units rather than a currency). 
+     * This endpoint is used to fetch a day-by-day snapshot of a customer's costs in Orb, calculated by applying pricing information to the underlying usage (see the [subscription usage endpoint](gcription-usage) to fetch usage per metric, in usage units rather than a currency). 
      * 
      * This endpoint can be leveraged for internal tooling and to provide a more transparent billing experience for your end users:
      * 
      * 1. Understand the cost breakdown per line item historically and in real-time for the current billing period. 
-     * 2. Provide customer visibility into how different services are contributing to the overall invoice with a per-day timeseries (as compared to the [upcoming invoice](../reference/Orb-API.json/paths/~1invoices~1upcoming/get) resource, which represents a snapshot for the current period).
+     * 2. Provide customer visibility into how different services are contributing to the overall invoice with a per-day timeseries (as compared to the [upcoming invoice](fetch-upcoming-invoice) resource, which represents a snapshot for the current period).
      * 3. Assess how minimums and discounts affect your customers by teasing apart costs directly as a result of usage, as opposed to minimums and discounts at the plan and price level.
      * 4. Gain insight into key customer health metrics, such as the percent utilization of the minimum committed spend.
      * 
@@ -275,24 +441,26 @@ class Customer
      * When a price uses matrix pricing, it's important to view costs grouped by those matrix dimensions. Orb will return `price_groups` with the `grouping_key` and `secondary_grouping_key` based on the matrix price definition, for each `grouping_value` and `secondary_grouping_value` available.
      * 
      * 
-     * @param \orb\orb\Models\Operations\GetCustomerCostsRequest $request
-     * @return \orb\orb\Models\Operations\GetCustomerCostsResponse
+     * @param \orb\orb\Models\Operations\FetchCustomerCostsRequest $request
+     * @return \orb\orb\Models\Operations\FetchCustomerCostsResponse
      */
-	public function getCosts(
-        \orb\orb\Models\Operations\GetCustomerCostsRequest $request,
-    ): \orb\orb\Models\Operations\GetCustomerCostsResponse
+	public function fetchCosts(
+        \orb\orb\Models\Operations\FetchCustomerCostsRequest $request,
+    ): \orb\orb\Models\Operations\FetchCustomerCostsResponse
     {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}/costs', \orb\orb\Models\Operations\GetCustomerCostsRequest::class, $request);
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}/costs', \orb\orb\Models\Operations\FetchCustomerCostsRequest::class, $request);
         
         $options = ['http_errors' => false];
-        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\GetCustomerCostsRequest::class, $request, null));
+        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\FetchCustomerCostsRequest::class, $request, null));
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\GetCustomerCostsResponse();
+        $response = new \orb\orb\Models\Operations\FetchCustomerCostsResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -300,7 +468,7 @@ class Customer
         if ($httpResponse->getStatusCode() === 200) {
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
-                $response->getCustomerCosts200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\GetCustomerCosts200ApplicationJSON', 'json');
+                $response->fetchCustomerCosts200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\FetchCustomerCosts200ApplicationJSON', 'json');
             }
         }
 
@@ -310,26 +478,28 @@ class Customer
     /**
      * View customer costs by external customer ID
      * 
-     * This endpoint's resource and semantics exactly mirror [View customer costs](../reference/Orb-API.json/paths/~1customers~1{customer_id}~1costs/get) but operates on an [external customer ID](../docs/Customer-ID-Aliases.md) rather than an Orb issued identifier.
+     * This endpoint's resource and semantics exactly mirror [View customer costs](fetch-customer-costs) but operates on an [external customer ID](../guides/events-and-metrics/customer-aliases) rather than an Orb issued identifier.
      * 
-     * @param \orb\orb\Models\Operations\GetExternalCustomerCostsRequest $request
-     * @return \orb\orb\Models\Operations\GetExternalCustomerCostsResponse
+     * @param \orb\orb\Models\Operations\FetchCustomerCostsExternalIdRequest $request
+     * @return \orb\orb\Models\Operations\FetchCustomerCostsExternalIdResponse
      */
-	public function getCostsByExternalId(
-        \orb\orb\Models\Operations\GetExternalCustomerCostsRequest $request,
-    ): \orb\orb\Models\Operations\GetExternalCustomerCostsResponse
+	public function fetchCostsByExternalId(
+        \orb\orb\Models\Operations\FetchCustomerCostsExternalIdRequest $request,
+    ): \orb\orb\Models\Operations\FetchCustomerCostsExternalIdResponse
     {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/external_customer_id/{external_customer_id}/costs', \orb\orb\Models\Operations\GetExternalCustomerCostsRequest::class, $request);
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/external_customer_id/{external_customer_id}/costs', \orb\orb\Models\Operations\FetchCustomerCostsExternalIdRequest::class, $request);
         
         $options = ['http_errors' => false];
-        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\GetExternalCustomerCostsRequest::class, $request, null));
+        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\FetchCustomerCostsExternalIdRequest::class, $request, null));
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\GetExternalCustomerCostsResponse();
+        $response = new \orb\orb\Models\Operations\FetchCustomerCostsExternalIdResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -337,7 +507,57 @@ class Customer
         if ($httpResponse->getStatusCode() === 200) {
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
-                $response->getExternalCustomerCosts200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\GetExternalCustomerCosts200ApplicationJSON', 'json');
+                $response->fetchCustomerCostsExternalId200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\FetchCustomerCostsExternalId200ApplicationJSON', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * Get customer balance transactions
+     * 
+     * # The customer balance
+     * 
+     * The customer balance is an amount in the customer's currency, which Orb automatically applies to subsequent invoices. This balance can be adjusted manually via Orb's webapp on the customer details page. You can use this balance to provide a fixed mid-period credit to the customer. Commonly, this is done due to system downtime/SLA violation, or an adhoc adjustment discussed with the customer.
+     * 
+     * If the balance is a positive value at the time of invoicing, it represents that the customer has credit that should be used to offset the amount due on the next issued invoice. In this case, Orb will automatically reduce the next invoice by the balance amount, and roll over any remaining balance if the invoice is fully discounted.
+     * 
+     * If the balance is a negative value at the time of invoicing, Orb will increase the invoice's amount due with a positive adjustment, and reset the balance to 0.
+     * 
+     * This endpoint retrieves all customer balance transactions in reverse chronological order for a single customer, providing a complete audit trail of all adjustments and invoice applications.
+     * 
+     * ## Eligibility
+     * 
+     * The customer balance can only be applied to invoices or adjusted manually if invoices are not synced to a separate invoicing provider. If a payment gateway such as Stripe is used, the balance will be applied to the invoice before forwarding payment to the gateway.
+     * 
+     * @param \orb\orb\Models\Operations\ListBalanceTransactionsRequest $request
+     * @return \orb\orb\Models\Operations\ListBalanceTransactionsResponse
+     */
+	public function fetchTransactions(
+        \orb\orb\Models\Operations\ListBalanceTransactionsRequest $request,
+    ): \orb\orb\Models\Operations\ListBalanceTransactionsResponse
+    {
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}/balance_transactions', \orb\orb\Models\Operations\ListBalanceTransactionsRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
+        
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\ListBalanceTransactionsResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->listBalanceTransactions200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\ListBalanceTransactions200ApplicationJSON', 'json');
             }
         }
 
@@ -349,7 +569,7 @@ class Customer
      * 
      * 
      * 
-     * This endpoint returns a list of all customers for an account. The list of customers is ordered starting from the most recently created customer. This endpoint follows Orb's [standardized pagination format](../docs/Pagination.md).
+     * This endpoint returns a list of all customers for an account. The list of customers is ordered starting from the most recently created customer. This endpoint follows Orb's [standardized pagination format](../api/pagination).
      * 
      * See [Customer](../reference/Orb-API.json/components/schemas/Customer) for an overview of the customer model.
      * 
@@ -358,12 +578,14 @@ class Customer
 	public function list(
     ): \orb\orb\Models\Operations\ListCustomersResponse
     {
-        $baseUrl = $this->_serverUrl;
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/customers');
         
         $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
@@ -383,31 +605,75 @@ class Customer
     }
 	
     /**
+     * Update a customer by external ID
+     * 
+     * This endpoint is used to update customer details given an `external_customer_id` (see [Customer ID Aliases](../guides/events-and-metrics/customer-aliases)).
+     * 
+     * Note that the resource and semantics of this endpoint exactly mirror [Update Customer](update-customer).
+     * 
+     * @param \orb\orb\Models\Operations\UpdateCustomerExternalIdRequest $request
+     * @return \orb\orb\Models\Operations\UpdateCustomerExternalIdResponse
+     */
+	public function updateByExternalId(
+        \orb\orb\Models\Operations\UpdateCustomerExternalIdRequest $request,
+    ): \orb\orb\Models\Operations\UpdateCustomerExternalIdResponse
+    {
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/external_customer_id/{external_customer_id}', \orb\orb\Models\Operations\UpdateCustomerExternalIdRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
+        $options = array_merge_recursive($options, $body);
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
+        
+        $httpResponse = $this->sdkConfiguration->securityClient->request('PUT', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\UpdateCustomerExternalIdResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 200) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->customer = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Customer', 'json');
+            }
+        }
+
+        return $response;
+    }
+	
+    /**
      * Update customer
      * 
-     * This endpoint can be used to update the `payment_provider`, `payment_provider_id`, `name`, `email`, `shipping_address`, and `billing_address` of an existing customer.
+     * This endpoint can be used to update the `payment_provider`, `payment_provider_id`, `name`, `email`, `email_delivery`, `auto_collection`, `shipping_address`, and `billing_address` of an existing customer.
      * 
      * Other fields on a customer are currently immutable.
      * 
-     * @param \orb\orb\Models\Operations\PutCustomersCustomerIdRequest $request
-     * @return \orb\orb\Models\Operations\PutCustomersCustomerIdResponse
+     * @param \orb\orb\Models\Operations\UpdateCustomerRequest $request
+     * @return \orb\orb\Models\Operations\UpdateCustomerResponse
      */
-	public function update(
-        \orb\orb\Models\Operations\PutCustomersCustomerIdRequest $request,
-    ): \orb\orb\Models\Operations\PutCustomersCustomerIdResponse
+	public function updateCustomer(
+        \orb\orb\Models\Operations\UpdateCustomerRequest $request,
+    ): \orb\orb\Models\Operations\UpdateCustomerResponse
     {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}', \orb\orb\Models\Operations\PutCustomersCustomerIdRequest::class, $request);
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}', \orb\orb\Models\Operations\UpdateCustomerRequest::class, $request);
         
         $options = ['http_errors' => false];
         $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
         $options = array_merge_recursive($options, $body);
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('PUT', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('PUT', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\PutCustomersCustomerIdResponse();
+        $response = new \orb\orb\Models\Operations\UpdateCustomerResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -416,189 +682,6 @@ class Customer
             if (Utils\Utils::matchContentType($contentType, 'application/json')) {
                 $serializer = Utils\JSON::createSerializer();
                 $response->customer = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Customer', 'json');
-            }
-        }
-
-        return $response;
-    }
-	
-    /**
-     * Update a customer by external ID
-     * 
-     * This endpoint is used to update customer details given an `external_customer_id` (see [Customer ID Aliases](../docs/Customer-ID-Aliases.md)).
-     * 
-     * Note that the resource and semantics of this endpoint exactly mirror [Update Customer](Orb-API.json/paths/~1customers~1{customer_id}/put).
-     * 
-     * @param \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequest $request
-     * @return \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdResponse
-     */
-	public function updateByExternalId(
-        \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequest $request,
-    ): \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdResponse
-    {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/external_customer_id/{external_customer_id}', \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdRequest::class, $request);
-        
-        $options = ['http_errors' => false];
-        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
-        $options = array_merge_recursive($options, $body);
-        
-        $httpResponse = $this->_securityClient->request('PUT', $url, $options);
-        
-        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
-
-        $response = new \orb\orb\Models\Operations\PutCustomersExternalCustomerIdExternalCustomerIdResponse();
-        $response->statusCode = $httpResponse->getStatusCode();
-        $response->contentType = $contentType;
-        $response->rawResponse = $httpResponse;
-        
-        if ($httpResponse->getStatusCode() === 200) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $serializer = Utils\JSON::createSerializer();
-                $response->customer = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Customer', 'json');
-            }
-        }
-
-        return $response;
-    }
-	
-    /**
-     * Amend customer usage
-     * 
-     * This endpoint is used to amend usage within a timeframe for a customer that has an active subscription.
-     * 
-     * This endpoint will mark _all_ existing events within `[timeframe_start, timeframe_end)` as _ignored_  for billing  purposes, and Orb will only use the _new_ events passed in the body of this request as the source of truth for that timeframe moving forwards. Note that a given time period can be amended any number of times, so events can be overwritten in subsequent calls to this endpoint.
-     * 
-     * This is a powerful and audit-safe mechanism to retroactively change usage data in cases where you need to:
-     * - decrease historical usage consumption because of degraded service availability in your systems
-     * - account for gaps from your usage reporting mechanism
-     * - make point-in-time fixes for specific event records, while retaining the original time of usage and associated metadata
-     * 
-     * This amendment API is designed with two explicit goals:
-     * 1. Amendments are **always audit-safe**. The amendment process will still retain original events in the timeframe, though they will be ignored for billing calculations. For auditing and data fidelity purposes, Orb never overwrites or permanently deletes ingested usage data.
-     * 2. Amendments always preserve data **consistency**. In other words, either an amendment is fully processed by the system (and the new events for the timeframe are honored rather than the existing ones) or the amendment request fails. To maintain this important property, Orb prevents _partial event ingestion_ on this endpoint.
-     * 
-     * 
-     * ## Response semantics
-     *  - Either all events are ingested successfully, or all fail to ingest (returning a `4xx` or `5xx` response code).
-     * - Any event that fails schema validation will lead to a `4xx` response. In this case, to maintain data consistency, Orb will not ingest any events and will also not deprecate existing events in the time period.
-     * - You can assume that the amendment is successful on receipt of a `2xx` response.While a successful response from this endpoint indicates that the new events have been ingested, updating usage totals happens asynchronously and may be delayed by a few minutes. 
-     * 
-     * As emphasized above, Orb will never show an inconsistent state (e.g. in invoice previews or dashboards); either it will show the existing state (before the amendment) or the new state (with new events in the requested timeframe).
-     * 
-     * 
-     * ## Sample request body
-     * 
-     * ```json
-     * {
-     * 	"events": [{
-     * 		"event_name": "payment_processed",
-     * 		"timestamp": "2022-03-24T07:15:00Z",
-     * 		"properties": {
-     * 			"amount": 100
-     * 		}
-     * 	}, {
-     * 		"event_name": "payment_failed",
-     * 		"timestamp": "2022-03-24T07:15:00Z",
-     * 		"properties": {
-     * 			"amount": 100
-     * 		}
-     * 	}]
-     * }
-     * ```
-     * 
-     * ## Request Validation
-     * - The `timestamp` of each event reported must fall within the bounds of `timeframe_start` and `timeframe_end`. As with ingestion, all timestamps must be sent in ISO8601 format with UTC timezone offset.
-     * 
-     * - Orb **does not accept an `idempotency_key`** with each event in this endpoint, since the entirety of the event list must be ingested to ensure consistency. On retryable errors, you should retry the request in its entirety, and assume that the amendment operation has not succeeded until receipt of a `2xx`.
-     * 
-     * - Both `timeframe_start` and `timeframe_end` must be timestamps in the past. Furthermore, Orb will generally validate that the `timeframe_start` and `timeframe_end` fall within the customer's _current_ subscription billing period. However, Orb does allow amendments while in the grace period of the previous billing period; in this instance, the timeframe can start before the current period.
-     * 
-     * 
-     * ## API Limits
-     * Note that Orb does not currently enforce a hard rate-limit for API usage or a maximum request payload size. Similar to the event ingestion API, this API is architected for high-throughput ingestion. It is also safe to _programmatically_ call this endpoint if your system can automatically detect a need for historical amendment.
-     * 
-     * In order to overwrite timeframes with a very large number of events, we suggest using multiple calls with small adjacent (e.g. every hour) timeframes.
-     * 
-     * @param \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequest $request
-     * @return \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageResponse
-     */
-	public function updateUsage(
-        \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequest $request,
-    ): \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageResponse
-    {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/{customer_id}/usage', \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequest::class, $request);
-        
-        $options = ['http_errors' => false];
-        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
-        $options = array_merge_recursive($options, $body);
-        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\PatchCustomersCustomerIdUsageRequest::class, $request, null));
-        
-        $httpResponse = $this->_securityClient->request('PATCH', $url, $options);
-        
-        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
-
-        $response = new \orb\orb\Models\Operations\PatchCustomersCustomerIdUsageResponse();
-        $response->statusCode = $httpResponse->getStatusCode();
-        $response->contentType = $contentType;
-        $response->rawResponse = $httpResponse;
-        
-        if ($httpResponse->getStatusCode() === 200) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $serializer = Utils\JSON::createSerializer();
-                $response->patchCustomersCustomerIdUsage200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PatchCustomersCustomerIdUsage200ApplicationJSON', 'json');
-            }
-        }
-        else if ($httpResponse->getStatusCode() === 400) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $serializer = Utils\JSON::createSerializer();
-                $response->patchCustomersCustomerIdUsage400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PatchCustomersCustomerIdUsage400ApplicationJSON', 'json');
-            }
-        }
-
-        return $response;
-    }
-	
-    /**
-     * Amend customer usage by external ID
-     * 
-     * This endpoint's resource and semantics exactly mirror [Amend customer usage](../reference/Orb-API.json/paths/~1customers~1{customer_id}~1usage/patch) but operates on an [external customer ID](see (../docs/Customer-ID-Aliases.md)) rather than an Orb issued identifier.
-     * 
-     * @param \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequest $request
-     * @return \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageResponse
-     */
-	public function updateUsageByExternalId(
-        \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequest $request,
-    ): \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageResponse
-    {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/customers/external_customer_id/{external_customer_id}/usage', \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequest::class, $request);
-        
-        $options = ['http_errors' => false];
-        $body = Utils\Utils::serializeRequestBody($request, "requestBody", "json");
-        $options = array_merge_recursive($options, $body);
-        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageRequest::class, $request, null));
-        
-        $httpResponse = $this->_securityClient->request('PATCH', $url, $options);
-        
-        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
-
-        $response = new \orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsageResponse();
-        $response->statusCode = $httpResponse->getStatusCode();
-        $response->contentType = $contentType;
-        $response->rawResponse = $httpResponse;
-        
-        if ($httpResponse->getStatusCode() === 200) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $serializer = Utils\JSON::createSerializer();
-                $response->patchExternalCustomersCustomerIdUsage200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsage200ApplicationJSON', 'json');
-            }
-        }
-        else if ($httpResponse->getStatusCode() === 400) {
-            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
-                $serializer = Utils\JSON::createSerializer();
-                $response->patchExternalCustomersCustomerIdUsage400ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\PatchExternalCustomersCustomerIdUsage400ApplicationJSON', 'json');
             }
         }
 

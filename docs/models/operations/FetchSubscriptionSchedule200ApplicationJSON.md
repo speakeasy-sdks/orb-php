@@ -1,0 +1,11 @@
+# FetchSubscriptionSchedule200ApplicationJSON
+
+OK
+
+
+## Fields
+
+| Field                                                                                                                                | Type                                                                                                                                 | Required                                                                                                                             | Description                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `data`                                                                                                                               | array<[FetchSubscriptionSchedule200ApplicationJSONData](../../models/operations/FetchSubscriptionSchedule200ApplicationJSONData.md)> | :heavy_minus_sign:                                                                                                                   | N/A                                                                                                                                  |
+| `paginationMetadata`                                                                                                                 | [?\orb\orb\Models\Shared\PaginationMetadata](../../models/shared/PaginationMetadata.md)                                              | :heavy_minus_sign:                                                                                                                   | N/A                                                                                                                                  |

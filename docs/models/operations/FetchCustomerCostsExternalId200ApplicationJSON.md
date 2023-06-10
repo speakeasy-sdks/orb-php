@@ -1,0 +1,11 @@
+# FetchCustomerCostsExternalId200ApplicationJSON
+
+OK
+
+
+## Fields
+
+| Field                                                                                                                                      | Type                                                                                                                                       | Required                                                                                                                                   | Description                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `data`                                                                                                                                     | array<[FetchCustomerCostsExternalId200ApplicationJSONData](../../models/operations/FetchCustomerCostsExternalId200ApplicationJSONData.md)> | :heavy_check_mark:                                                                                                                         | N/A                                                                                                                                        |
+| `paginationMetadata`                                                                                                                       | [\orb\orb\Models\Shared\PaginationMetadata](../../models/shared/PaginationMetadata.md)                                                     | :heavy_check_mark:                                                                                                                         | N/A                                                                                                                                        |

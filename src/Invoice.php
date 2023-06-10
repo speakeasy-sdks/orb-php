@@ -11,54 +11,80 @@ namespace orb\orb;
 class Invoice 
 {
 
-	// SDK private variables namespaced with _ to avoid conflicts with API models
-	private \GuzzleHttp\ClientInterface $_defaultClient;
-	private \GuzzleHttp\ClientInterface $_securityClient;
-	private string $_serverUrl;
-	private string $_language;
-	private string $_sdkVersion;
-	private string $_genVersion;	
+	private SDKConfiguration $sdkConfiguration;
 
 	/**
-	 * @param \GuzzleHttp\ClientInterface $defaultClient
-	 * @param \GuzzleHttp\ClientInterface $securityClient
-	 * @param string $serverUrl
-	 * @param string $language
-	 * @param string $sdkVersion
-	 * @param string $genVersion
+	 * @param SDKConfiguration $sdkConfig
 	 */
-	public function __construct(\GuzzleHttp\ClientInterface $defaultClient, \GuzzleHttp\ClientInterface $securityClient, string $serverUrl, string $language, string $sdkVersion, string $genVersion)
+	public function __construct(SDKConfiguration $sdkConfig)
 	{
-		$this->_defaultClient = $defaultClient;
-		$this->_securityClient = $securityClient;
-		$this->_serverUrl = $serverUrl;
-		$this->_language = $language;
-		$this->_sdkVersion = $sdkVersion;
-		$this->_genVersion = $genVersion;
+		$this->sdkConfiguration = $sdkConfig;
 	}
+	
+    /**
+     * Create invoice line item
+     * 
+     * This creates a one-off fixed fee [Invoice line item](../reference/Orb-API.json/components/schemas/Invoice-line-item) on an [Invoice](../reference/Orb-API.json/components/schemas/Invoice). This can only be done for invoices that are in a `draft` status.
+     * 
+     * @param \orb\orb\Models\Operations\CreateInvoiceLineItemRequestBody $request
+     * @return \orb\orb\Models\Operations\CreateInvoiceLineItemResponse
+     */
+	public function create(
+        \orb\orb\Models\Operations\CreateInvoiceLineItemRequestBody $request,
+    ): \orb\orb\Models\Operations\CreateInvoiceLineItemResponse
+    {
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/invoice_line_items');
+        
+        $options = ['http_errors' => false];
+        $body = Utils\Utils::serializeRequestBody($request, "request", "json");
+        $options = array_merge_recursive($options, $body);
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
+        
+        $httpResponse = $this->sdkConfiguration->securityClient->request('POST', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\CreateInvoiceLineItemResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 201) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->invoiceLineItem = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\InvoiceLineItem', 'json');
+            }
+        }
+
+        return $response;
+    }
 	
     /**
      * Retrieve an Invoice
      * 
      * This endpoint is used to fetch an [`Invoice`](../reference/Orb-API.json/components/schemas/Invoice) given an identifier.
      * 
-     * @param \orb\orb\Models\Operations\GetInvoiceInvoiceIdRequest $request
-     * @return \orb\orb\Models\Operations\GetInvoiceInvoiceIdResponse
+     * @param \orb\orb\Models\Operations\FetchInvoiceRequest $request
+     * @return \orb\orb\Models\Operations\FetchInvoiceResponse
      */
-	public function get(
-        \orb\orb\Models\Operations\GetInvoiceInvoiceIdRequest $request,
-    ): \orb\orb\Models\Operations\GetInvoiceInvoiceIdResponse
+	public function fetch(
+        \orb\orb\Models\Operations\FetchInvoiceRequest $request,
+    ): \orb\orb\Models\Operations\FetchInvoiceResponse
     {
-        $baseUrl = $this->_serverUrl;
-        $url = Utils\Utils::generateUrl($baseUrl, '/invoices/{invoice_id}', \orb\orb\Models\Operations\GetInvoiceInvoiceIdRequest::class, $request);
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/invoices/{invoice_id}', \orb\orb\Models\Operations\FetchInvoiceRequest::class, $request);
         
         $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\GetInvoiceInvoiceIdResponse();
+        $response = new \orb\orb\Models\Operations\FetchInvoiceResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -76,26 +102,28 @@ class Invoice
     /**
      * Retrieve upcoming invoice
      * 
-     * This endpoint can be used to fetch the [`UpcomingInvoice`](../reference/Orb-API.json/components/schemas/Upcoming%20Invoice) for the current billing period given a subscription.
+     * This endpoint can be used to fetch the [`Upcoming Invoice`](../reference/Orb-API.json/components/schemas/UpcomingInvoice) for the current billing period given a subscription.
      * 
-     * @param \orb\orb\Models\Operations\GetInvoicesUpcomingRequest $request
-     * @return \orb\orb\Models\Operations\GetInvoicesUpcomingResponse
+     * @param \orb\orb\Models\Operations\FetchUpcomingInvoiceRequest $request
+     * @return \orb\orb\Models\Operations\FetchUpcomingInvoiceResponse
      */
-	public function getUpcoming(
-        \orb\orb\Models\Operations\GetInvoicesUpcomingRequest $request,
-    ): \orb\orb\Models\Operations\GetInvoicesUpcomingResponse
+	public function fetchUpcoming(
+        \orb\orb\Models\Operations\FetchUpcomingInvoiceRequest $request,
+    ): \orb\orb\Models\Operations\FetchUpcomingInvoiceResponse
     {
-        $baseUrl = $this->_serverUrl;
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/invoices/upcoming');
         
         $options = ['http_errors' => false];
-        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\GetInvoicesUpcomingRequest::class, $request, null));
+        $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\FetchUpcomingInvoiceRequest::class, $request, null));
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
-        $response = new \orb\orb\Models\Operations\GetInvoicesUpcomingResponse();
+        $response = new \orb\orb\Models\Operations\FetchUpcomingInvoiceResponse();
         $response->statusCode = $httpResponse->getStatusCode();
         $response->contentType = $contentType;
         $response->rawResponse = $httpResponse;
@@ -115,7 +143,9 @@ class Invoice
      * 
      * This endpoint returns a list of all [`Invoice`](../reference/Orb-API.json/components/schemas/Invoice)s for an account in a list format. 
      * 
-     * The list of invoices is ordered starting from the most recently issued invoice date. The response also includes `pagination_metadata`, which lets the caller retrieve the next page of results if they exist.
+     * The list of invoices is ordered starting from the most recently issued invoice date. The response also includes [`pagination_metadata`](../api/pagination), which lets the caller retrieve the next page of results if they exist.
+     * 
+     * By default, this only returns invoices that are `issued`, `paid`, or `synced`.
      * 
      * @param \orb\orb\Models\Operations\ListInvoicesRequest $request
      * @return \orb\orb\Models\Operations\ListInvoicesResponse
@@ -124,13 +154,15 @@ class Invoice
         \orb\orb\Models\Operations\ListInvoicesRequest $request,
     ): \orb\orb\Models\Operations\ListInvoicesResponse
     {
-        $baseUrl = $this->_serverUrl;
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
         $url = Utils\Utils::generateUrl($baseUrl, '/invoices');
         
         $options = ['http_errors' => false];
         $options = array_merge_recursive($options, Utils\Utils::getQueryParams(\orb\orb\Models\Operations\ListInvoicesRequest::class, $request, null));
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
         
-        $httpResponse = $this->_securityClient->request('GET', $url, $options);
+        $httpResponse = $this->sdkConfiguration->securityClient->request('GET', $url, $options);
         
         $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
 
@@ -144,6 +176,48 @@ class Invoice
                 $serializer = Utils\JSON::createSerializer();
                 $response->listInvoices200ApplicationJSONObject = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Operations\ListInvoices200ApplicationJSON', 'json');
             }
+        }
+
+        return $response;
+    }
+	
+    /**
+     * Void an invoice
+     * 
+     * This endpoint allows an invoice's status to be set the `void` status. This can only be done to invoices that are in the `issued` status.
+     * 
+     * If the associated invoice has used the customer balance to change the amount due, the customer balance operation will be reverted. For example, if the invoice used $10 of customer balance, that amount will be added back to the customer balance upon voiding.
+     * 
+     * @param \orb\orb\Models\Operations\PostInvoicesInvoiceIdVoidRequest $request
+     * @return \orb\orb\Models\Operations\PostInvoicesInvoiceIdVoidResponse
+     */
+	public function void(
+        \orb\orb\Models\Operations\PostInvoicesInvoiceIdVoidRequest $request,
+    ): \orb\orb\Models\Operations\PostInvoicesInvoiceIdVoidResponse
+    {
+        $baseUrl = $this->sdkConfiguration->getServerUrl();
+        $url = Utils\Utils::generateUrl($baseUrl, '/invoices/{invoice_id}/void', \orb\orb\Models\Operations\PostInvoicesInvoiceIdVoidRequest::class, $request);
+        
+        $options = ['http_errors' => false];
+        $options['headers']['Accept'] = 'application/json';
+        $options['headers']['user-agent'] = sprintf('speakeasy-sdk/%s %s %s %s', $this->sdkConfiguration->language, $this->sdkConfiguration->sdkVersion, $this->sdkConfiguration->genVersion, $this->sdkConfiguration->openapiDocVersion);
+        
+        $httpResponse = $this->sdkConfiguration->securityClient->request('POST', $url, $options);
+        
+        $contentType = $httpResponse->getHeader('Content-Type')[0] ?? '';
+
+        $response = new \orb\orb\Models\Operations\PostInvoicesInvoiceIdVoidResponse();
+        $response->statusCode = $httpResponse->getStatusCode();
+        $response->contentType = $contentType;
+        $response->rawResponse = $httpResponse;
+        
+        if ($httpResponse->getStatusCode() === 201) {
+            if (Utils\Utils::matchContentType($contentType, 'application/json')) {
+                $serializer = Utils\JSON::createSerializer();
+                $response->invoice = $serializer->deserialize((string)$httpResponse->getBody(), 'orb\orb\Models\Shared\Invoice', 'json');
+            }
+        }
+        else if ($httpResponse->getStatusCode() === 400) {
         }
 
         return $response;
