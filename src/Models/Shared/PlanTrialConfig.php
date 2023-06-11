@@ -17,12 +17,12 @@ class PlanTrialConfig
     public ?float $trialPeriod = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('trial_period_unit')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PlanTrialConfigTrialPeriodUnitEnum>')]
-    public PlanTrialConfigTrialPeriodUnitEnum $trialPeriodUnit;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\PlanTrialConfigTrialPeriodUnit>')]
+    public PlanTrialConfigTrialPeriodUnit $trialPeriodUnit;
     
 	public function __construct()
 	{
 		$this->trialPeriod = null;
-		$this->trialPeriodUnit = \orb\orb\Models\Shared\PlanTrialConfigTrialPeriodUnitEnum::DAYS;
+		$this->trialPeriodUnit = \orb\orb\Models\Shared\PlanTrialConfigTrialPeriodUnit::Days;
 	}
 }

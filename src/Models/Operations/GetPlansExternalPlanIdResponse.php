@@ -14,6 +14,14 @@ class GetPlansExternalPlanIdResponse
 	
     public string $contentType;
     
+    /**
+     * OK
+     * 
+     * @var ?\orb\orb\Models\Shared\Plan $plan
+     */
+	
+    public ?\orb\orb\Models\Shared\Plan $plan = null;
+    
 	
     public int $statusCode;
     
@@ -23,6 +31,7 @@ class GetPlansExternalPlanIdResponse
 	public function __construct()
 	{
 		$this->contentType = "";
+		$this->plan = null;
 		$this->statusCode = 0;
 		$this->rawResponse = null;
 	}

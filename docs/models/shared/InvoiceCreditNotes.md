@@ -1,0 +1,13 @@
+# InvoiceCreditNotes
+
+
+## Fields
+
+| Field                                                         | Type                                                          | Required                                                      | Description                                                   | Example                                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------- |
+| `creditNoteNumber`                                            | *?string*                                                     | :heavy_minus_sign:                                            | N/A                                                           |                                                               |
+| `id`                                                          | *?string*                                                     | :heavy_minus_sign:                                            | N/A                                                           |                                                               |
+| `reason`                                                      | *?string*                                                     | :heavy_minus_sign:                                            | N/A                                                           |                                                               |
+| `total`                                                       | *?string*                                                     | :heavy_minus_sign:                                            | N/A                                                           |                                                               |
+| `type`                                                        | *?string*                                                     | :heavy_minus_sign:                                            | N/A                                                           |                                                               |
+| `voidedAt`                                                    | [\DateTime](https://www.php.net/manual/en/class.datetime.php) | :heavy_minus_sign:                                            | N/A                                                           | 2022-05-01T07:01:31+00:00                                     |

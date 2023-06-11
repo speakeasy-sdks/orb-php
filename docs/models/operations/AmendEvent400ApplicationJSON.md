@@ -1,0 +1,13 @@
+# AmendEvent400ApplicationJSON
+
+Bad Request
+
+
+## Fields
+
+| Field                                                                                  | Type                                                                                   | Required                                                                               | Description                                                                            | Example                                                                                |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `status`                                                                               | *?int*                                                                                 | :heavy_minus_sign:                                                                     | HTTP Code                                                                              |                                                                                        |
+| `title`                                                                                | *?string*                                                                              | :heavy_minus_sign:                                                                     | Error message                                                                          |                                                                                        |
+| `type`                                                                                 | *?string*                                                                              | :heavy_minus_sign:                                                                     | N/A                                                                                    | "https://docs.billwithorb.com/reference/error-responses#400-request-validation-errors" |
+| `validationErrors`                                                                     | array<*string*>                                                                        | :heavy_minus_sign:                                                                     | An array of strings corresponding to the validation failures                           |                                                                                        |

@@ -9,7 +9,7 @@ declare(strict_types=1);
 namespace orb\orb;
 
 /**
- * SDK - Orb powers usage-based billing for the fastest-growing software companies.
+ * SDK - API Reference: Orb powers usage-based billing for the fastest-growing software companies.
  * 
  * Orb's API is built with the following principles in mind:
  * 
@@ -24,66 +24,73 @@ class SDK
 {
 	public const SERVERS = [
         /** Production server */
-		'https://api.billwithorb.com/v1',
+		'https://api.withorb.com/v1',
 	];
   	
     /**
-     * Actions related to API availability.
+     * The Availability resource represents a customer's availability. Availability is created when a customer's invoice is paid, and is updated when a customer's transaction is refunded.
      * 
      * @var Availability $$availability
      */
 	public Availability $availability;
 	
     /**
-     * Actions related to credit management.
+     * The Coupon resource represents a discount that can be applied to a customer's invoice. Coupons can be applied to a customer's invoice either by the customer or by the Orb API.
      * 
-     * @var Credits $$credits
+     * @var Coupon $$coupon
      */
-	public Credits $credits;
+	public Coupon $coupon;
 	
     /**
-     * Actions related to customer management.
+     * The Credits resource represents a customer's credits. Credits are created when a customer's invoice is paid, and are updated when a customer's transaction is refunded.
+     * 
+     * @var Credit $$credit
+     */
+	public Credit $credit;
+	
+    /**
+     * The Credit Note resource represents a credit note that has been generated for a customer. Credit Notes are generated when a customer's billing interval has elapsed, and are updated when a customer's invoice is paid.
+     * 
+     * @var CreditNote $$creditNote
+     */
+	public CreditNote $creditNote;
+	
+    /**
+     * The Customer resource represents a customer of your service. Customers are created when a customer is created in your service, and are updated when a customer's information is updated in your service.
      * 
      * @var Customer $$customer
      */
 	public Customer $customer;
 	
     /**
-     * Actions related to event management.
+     * The Event resource represents an event that has been created for a customer. Events are created when a customer's invoice is paid, and are updated when a customer's transaction is refunded.
      * 
      * @var Event $$event
      */
 	public Event $event;
 	
     /**
-     * Actions related to invoice management.
+     * The Invoice resource represents an invoice that has been generated for a customer. Invoices are generated when a customer's billing interval has elapsed, and are updated when a customer's invoice is paid.
      * 
      * @var Invoice $$invoice
      */
 	public Invoice $invoice;
 	
     /**
-     * Actions related to plan management.
+     * The Plan resource represents a plan that can be subscribed to by a customer. Plans define the amount of credits that a customer will receive, the price of the plan, and the billing interval.
      * 
      * @var Plan $$plan
      */
 	public Plan $plan;
 	
     /**
-     * Actions related to subscription mangement.
+     * The Subscription resource represents a customer's subscription to a plan. Subscriptions are created when a customer subscribes to a plan, and are updated when a customer's plan is changed.
      * 
      * @var Subscription $$subscription
      */
 	public Subscription $subscription;
 		
-	// SDK private variables namespaced with _ to avoid conflicts with API models
-	private ?\GuzzleHttp\ClientInterface $_defaultClient;
-	private ?\GuzzleHttp\ClientInterface $_securityClient;
-	private ?Models\Shared\Security $_security;
-	private string $_serverUrl;
-	private string $_language = 'php';
-	private string $_sdkVersion = '1.0.0';
-	private string $_genVersion = '2.16.7';
+	private SDKConfiguration $sdkConfiguration;
 
 	/**
 	 * Returns a new instance of the SDK builder used to configure and create the SDK instance.
@@ -96,100 +103,28 @@ class SDK
 	}
 
 	/**
-	 * @param \GuzzleHttp\ClientInterface|null $client	 
-	 * @param Models\Shared\Security|null $security
-	 * @param string $serverUrl
-	 * @param array<string, string>|null $params
+	 * @param SDKConfiguration $sdkConfiguration
 	 */
-	public function __construct(?\GuzzleHttp\ClientInterface $client, ?Models\Shared\Security $security, string $serverUrl, ?array $params)
+	public function __construct(SDKConfiguration $sdkConfiguration)
 	{
-		$this->_defaultClient = $client;
+		$this->sdkConfiguration = $sdkConfiguration;
 		
-		if ($this->_defaultClient === null) {
-			$this->_defaultClient = new \GuzzleHttp\Client([
-				'timeout' => 60,
-			]);
-		}
-
-		$this->_securityClient = null;
-		if ($security !== null) {
-			$this->_security = $security;
-			$this->_securityClient = Utils\Utils::configureSecurityClient($this->_defaultClient, $this->_security);
-		}
+		$this->availability = new Availability($this->sdkConfiguration);
 		
-		if ($this->_securityClient === null) {
-			$this->_securityClient = $this->_defaultClient;
-		}
-
-		if (!empty($serverUrl)) {
-			$this->_serverUrl = Utils\Utils::templateUrl($serverUrl, $params);
-		}
+		$this->coupon = new Coupon($this->sdkConfiguration);
 		
-		if (empty($this->_serverUrl)) {
-			$this->_serverUrl = $this::SERVERS[0];
-		}
+		$this->credit = new Credit($this->sdkConfiguration);
 		
-		$this->availability = new Availability(
-			$this->_defaultClient,
-			$this->_securityClient,
-			$this->_serverUrl,
-			$this->_language,
-			$this->_sdkVersion,
-			$this->_genVersion
-		);
+		$this->creditNote = new CreditNote($this->sdkConfiguration);
 		
-		$this->credits = new Credits(
-			$this->_defaultClient,
-			$this->_securityClient,
-			$this->_serverUrl,
-			$this->_language,
-			$this->_sdkVersion,
-			$this->_genVersion
-		);
+		$this->customer = new Customer($this->sdkConfiguration);
 		
-		$this->customer = new Customer(
-			$this->_defaultClient,
-			$this->_securityClient,
-			$this->_serverUrl,
-			$this->_language,
-			$this->_sdkVersion,
-			$this->_genVersion
-		);
+		$this->event = new Event($this->sdkConfiguration);
 		
-		$this->event = new Event(
-			$this->_defaultClient,
-			$this->_securityClient,
-			$this->_serverUrl,
-			$this->_language,
-			$this->_sdkVersion,
-			$this->_genVersion
-		);
+		$this->invoice = new Invoice($this->sdkConfiguration);
 		
-		$this->invoice = new Invoice(
-			$this->_defaultClient,
-			$this->_securityClient,
-			$this->_serverUrl,
-			$this->_language,
-			$this->_sdkVersion,
-			$this->_genVersion
-		);
+		$this->plan = new Plan($this->sdkConfiguration);
 		
-		$this->plan = new Plan(
-			$this->_defaultClient,
-			$this->_securityClient,
-			$this->_serverUrl,
-			$this->_language,
-			$this->_sdkVersion,
-			$this->_genVersion
-		);
-		
-		$this->subscription = new Subscription(
-			$this->_defaultClient,
-			$this->_securityClient,
-			$this->_serverUrl,
-			$this->_language,
-			$this->_sdkVersion,
-			$this->_genVersion
-		);
+		$this->subscription = new Subscription($this->sdkConfiguration);
 	}
 }
