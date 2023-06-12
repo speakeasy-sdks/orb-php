@@ -51,11 +51,11 @@ class Event
     /**
      * A dictionary of custom properties. Values in this dictionary must be numeric, boolean, or strings. Nested dictionaries are disallowed.
      * 
-     * @var array<string, mixed> $properties
+     * @var \orb\orb\Models\Shared\EventProperties $properties
      */
 	#[\JMS\Serializer\Annotation\SerializedName('properties')]
-    #[\JMS\Serializer\Annotation\Type('array<string, mixed>')]
-    public array $properties;
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\EventProperties')]
+    public EventProperties $properties;
     
     /**
      * An ISO 8601 format date with no timezone offset (i.e. UTC). This should represent the time that usage was recorded, and is particularly important to attribute usage to a given billing period.
@@ -72,7 +72,7 @@ class Event
 		$this->eventName = "";
 		$this->externalCustomerId = null;
 		$this->id = "";
-		$this->properties = [];
+		$this->properties = new \orb\orb\Models\Shared\EventProperties();
 		$this->timestamp = "";
 	}
 }

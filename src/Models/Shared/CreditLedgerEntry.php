@@ -10,7 +10,7 @@ namespace orb\orb\Models\Shared;
 
 
 /**
- * CreditLedgerEntry - A credit ledger entry is a single entry in the customer balance ledger. More details about working with real-time balances are [here](../docs/Credits.md).
+ * CreditLedgerEntry - A credit ledger entry is a single entry in the customer balance ledger. More details about working with real-time balances are [here](../guides/product-catalog/prepurchase).
  * 
  * 
  * To support late and out-of-order event reporting, ledger entries are marked as either __committed_ or _pending_. Committed entries are finalized and will not change. Pending entries can be updated up until the event reporting grace period. 
@@ -21,13 +21,14 @@ namespace orb\orb\Models\Shared;
 class CreditLedgerEntry
 {
     /**
-     * Number of credits that were impacted
+     * Number of credits that were impacted. Required on creation for increment and decrement entries.
      * 
-     * @var float $amount
+     * @var ?float $amount
      */
 	#[\JMS\Serializer\Annotation\SerializedName('amount')]
     #[\JMS\Serializer\Annotation\Type('float')]
-    public float $amount;
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?float $amount = null;
     
 	#[\JMS\Serializer\Annotation\SerializedName('created_at')]
     #[\JMS\Serializer\Annotation\Type("DateTime<'Y-m-d\TH:i:s.up'>")]
@@ -62,15 +63,15 @@ class CreditLedgerEntry
     /**
      * Committed entries are older than the ingestion grace period, and cannot change. Pending entries are newer than the grace period and are subject to updates
      * 
-     * @var \orb\orb\Models\Shared\CreditLedgerEntryEntryStatusEnum $entryStatus
+     * @var \orb\orb\Models\Shared\CreditLedgerEntryEntryStatus $entryStatus
      */
 	#[\JMS\Serializer\Annotation\SerializedName('entry_status')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CreditLedgerEntryEntryStatusEnum>')]
-    public CreditLedgerEntryEntryStatusEnum $entryStatus;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CreditLedgerEntryEntryStatus>')]
+    public CreditLedgerEntryEntryStatus $entryStatus;
     
 	#[\JMS\Serializer\Annotation\SerializedName('entry_type')]
-    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CreditLedgerEntryEntryTypeEnum>')]
-    public CreditLedgerEntryEntryTypeEnum $entryType;
+    #[\JMS\Serializer\Annotation\Type('enum<orb\orb\Models\Shared\CreditLedgerEntryEntryType>')]
+    public CreditLedgerEntryEntryType $entryType;
     
 	#[\JMS\Serializer\Annotation\SerializedName('event_id')]
     #[\JMS\Serializer\Annotation\Type('string')]
@@ -90,6 +91,25 @@ class CreditLedgerEntry
     #[\JMS\Serializer\Annotation\Type('float')]
     public float $ledgerSequenceNumber;
     
+    /**
+     * User-specified metadata dictionary that's specified when adding a ledger entry. This contains key/value pairs if metadata is specified, but otherwise is an empty dictionary.
+     * 
+     * @var \orb\orb\Models\Shared\CreditLedgerEntryMetadata $metadata
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('metadata')]
+    #[\JMS\Serializer\Annotation\Type('orb\orb\Models\Shared\CreditLedgerEntryMetadata')]
+    public CreditLedgerEntryMetadata $metadata;
+    
+    /**
+     * In the case of an expiration change ledger entry, this represents the expiration time of the new block.
+     * 
+     * @var ?string $newBlockExpiryDate
+     */
+	#[\JMS\Serializer\Annotation\SerializedName('new_block_expiry_date')]
+    #[\JMS\Serializer\Annotation\Type('string')]
+    #[\JMS\Serializer\Annotation\SkipWhenEmpty]
+    public ?string $newBlockExpiryDate = null;
+    
 	#[\JMS\Serializer\Annotation\SerializedName('price_id')]
     #[\JMS\Serializer\Annotation\Type('string')]
     #[\JMS\Serializer\Annotation\SkipWhenEmpty]
@@ -101,17 +121,19 @@ class CreditLedgerEntry
     
 	public function __construct()
 	{
-		$this->amount = 0;
+		$this->amount = null;
 		$this->createdAt = new \DateTime();
 		$this->creditBlock = new \orb\orb\Models\Shared\CreditLedgerEntryCreditBlock();
 		$this->customer = new \orb\orb\Models\Shared\CreditLedgerEntryCustomer();
 		$this->description = "";
 		$this->endingBalance = 0;
-		$this->entryStatus = \orb\orb\Models\Shared\CreditLedgerEntryEntryStatusEnum::COMMITTED;
-		$this->entryType = \orb\orb\Models\Shared\CreditLedgerEntryEntryTypeEnum::INCREMENT;
+		$this->entryStatus = \orb\orb\Models\Shared\CreditLedgerEntryEntryStatus::Committed;
+		$this->entryType = \orb\orb\Models\Shared\CreditLedgerEntryEntryType::Increment;
 		$this->eventId = null;
 		$this->id = "";
 		$this->ledgerSequenceNumber = 0;
+		$this->metadata = new \orb\orb\Models\Shared\CreditLedgerEntryMetadata();
+		$this->newBlockExpiryDate = null;
 		$this->priceId = null;
 		$this->startingBalance = 0;
 	}
